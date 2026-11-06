@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Console mode builds</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/nx2apple-launcher/components/bundle.css">
+<link rel="stylesheet" href="bp.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap">
+<style>
+body{margin:0}
+.brow{display:flex;align-items:center;gap:28px;padding:18px 22px;border-radius:16px;box-sizing:border-box}
+.brow + .brow{margin-top:6px}
+.brow.is-focus{background:rgba(255,255,255,.08);outline:3px solid #fff0d6;outline-offset:0}
+.thumb{width:192px;aspect-ratio:1.8;border-radius:10px;background:var(--art);flex:none}
+.bname{font:700 24px/1.2 Manrope,sans-serif;color:#fff}
+.bsub{font:500 19px/1.3 Manrope,sans-serif;color:rgba(235,235,245,.6)}
+</style>
+</helmet>
+<div class="bp" style="font-family: Manrope, system-ui, sans-serif">
+  <header class="bp-top">
+    <span class="bp-word">Builds</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-pad"><span class="bp-pad__p">P1</span><span class="bp-pad__batt">78%</span></span>
+    <span class="bp-clock">21:42</span>
+  </header>
+
+  <section style="position: absolute; left: 96px; right: 96px; top: 124px; display: flex; flex-direction: column; gap: 14px">
+    <span class="bp-label">Compiling now</span>
+    <div class="brow is-focus">
+      <div class="thumb" style="--art: linear-gradient(160deg,#16243f,#2f5f8f 55%,#9fd0e0)"></div>
+      <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 10px; min-width: 0">
+        <div style="display: flex; align-items: baseline; gap: 16px"><span class="bname">[Game C]</span><span class="bsub">Update 1.1 · Mac</span></div>
+        <div style="display: flex; align-items: center; gap: 18px">
+          <div class="bp-bar" style="flex: 1 1 auto; --p: 62%"><i style="background: #ffc73d"></i></div>
+          <span style="font: 700 20px/1 Manrope, sans-serif; color: #ffc73d; font-variant-numeric: tabular-nums">62%</span>
+        </div>
+        <span class="bsub">Step 3 of 5 · Converting shaders · about 4 minutes left</span>
+      </div>
+    </div>
+
+    <span class="bp-label" style="margin-top: 18px">Waiting</span>
+    <div class="brow">
+      <div class="thumb" style="--art: linear-gradient(145deg,#2a1f12,#8a5a20 55%,#f0c870)"></div>
+      <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px"><span class="bname">[Game N]</span><span class="bsub">Mac · starts after [Game C]</span></div>
+    </div>
+
+    <span class="bp-label" style="margin-top: 18px">Recent</span>
+    <div class="brow">
+      <div class="thumb" style="--art: linear-gradient(140deg,#4a1f2c,#a8452f 60%,#f2a65a)"></div>
+      <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px"><span class="bname">[Game B]</span><span class="bsub">Mac and iPhone · 3 days ago · 11 min</span></div>
+      <span class="nx-status nx-status--ready" style="font-size: 20px">Compiled</span>
+    </div>
+    <div class="brow">
+      <div class="thumb" style="--art: linear-gradient(120deg,#102a2a,#1f6b66 55%,#7fd6b8); filter: saturate(.35) brightness(.7)"></div>
+      <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px"><span class="bname">[Game F]</span><span class="bsub">Mac · yesterday · the game data is incomplete</span></div>
+      <span class="nx-status nx-status--building" style="font-size: 20px">Stopped at step 2</span>
+    </div>
+  </section>
+
+  <footer class="bp-hints">
+    <span class="bp-hint"><span class="bp-g bp-g--icon" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"></path></svg></span>Menu</span>
+    <span class="bp-hint" style="color: var(--text-secondary)">New compiles start on the desktop</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-hint"><span class="bp-g">X</span>Stop</span>
+    <span class="bp-hint"><span class="bp-g">B</span>Back</span>
+    <span class="bp-hint"><span class="bp-g bp-g--a">A</span>Details</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

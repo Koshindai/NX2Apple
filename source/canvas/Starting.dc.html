@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Console mode Starting</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/nx2apple-launcher/components/bundle.css">
+<link rel="stylesheet" href="bp.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="bp" style="font-family: Manrope, system-ui, sans-serif">
+  <div class="bp-backdrop" data-label="[Hero artwork, slow push-in]" style="--art: linear-gradient(140deg,#4a1f2c,#a8452f 60%,#f2a65a)"></div>
+
+  <section style="position: absolute; left: 96px; bottom: 170px; width: 900px; display: flex; flex-direction: column; gap: 24px; z-index: 1">
+    <span class="bp-eyebrow bp-eyebrow--building">Starting</span>
+    <h1 class="bp-title">[Game B]</h1>
+
+    <div style="display: flex; flex-direction: column; gap: 18px; margin-top: 18px">
+      <div style="display: flex; align-items: center; gap: 16px; font: 600 22px/1 Manrope, sans-serif; color: var(--text-secondary)">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#40d678" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Preparing the game
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: center; gap: 16px; font: 700 24px/1 Manrope, sans-serif; color: #fff">
+          <span style="width: 26px; height: 26px; border-radius: 50%; border: 3px solid rgba(255,240,214,.25); border-top-color: #fff0d6; box-sizing: border-box"></span>Compiling shaders
+          <span class="bp-spacer"></span>
+          <span style="font: 600 20px/1 Manrope, sans-serif; color: var(--text-secondary); font-variant-numeric: tabular-nums">1,204 of 3,860</span>
+        </div>
+        <div class="bp-bar" style="--p: 31%; margin-left: 42px"><i></i></div>
+        <span style="margin-left: 42px; font: 400 18px/1.4 Manrope, sans-serif; color: var(--text-secondary)">Only the first start takes this long. The next ones open in a few seconds.</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px; font: 600 22px/1 Manrope, sans-serif; color: rgba(235,235,245,.4)">
+        <span style="width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(235,235,245,.3); box-sizing: border-box"></span>Opening the game window
+      </div>
+    </div>
+  </section>
+
+  <div class="bp-group" style="position: absolute; right: 96px; bottom: 170px; width: 420px; padding: 22px 26px; display: flex; flex-direction: column; gap: 12px; z-index: 1">
+    <span class="bp-label">Controls for this game</span>
+    <div style="display: flex; align-items: center; gap: 12px; font: 600 20px/1.2 Manrope, sans-serif"><span class="bp-g">P1</span>DualSense</div>
+    <div style="display: flex; align-items: center; gap: 12px; font: 600 20px/1.2 Manrope, sans-serif"><span class="bp-g">P2</span>Xbox Wireless</div>
+    <span style="font: 400 18px/1.4 Manrope, sans-serif; color: var(--text-secondary)">To quit the game, hold the Xbox button for 2 seconds, then press A.</span>
+  </div>
+
+  <footer class="bp-hints">
+    <span class="bp-spacer"></span>
+    <span class="bp-hint"><span class="bp-g">B</span>Cancel</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

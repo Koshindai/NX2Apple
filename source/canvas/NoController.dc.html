@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Console mode no controller</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/nx2apple-launcher/components/bundle.css">
+<link rel="stylesheet" href="bp.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap">
+<style>body{margin:0}
+.key{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:36px;padding:0 10px;box-sizing:border-box;border-radius:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-bottom-width:3px;font:700 16px/1 Manrope,sans-serif;color:#fff}
+</style>
+</helmet>
+<div class="bp" style="font-family: Manrope, system-ui, sans-serif">
+  <div class="bp-backdrop" style="--art: linear-gradient(125deg,#1f3a4d 0%,#3d6b5a 45%,#e0b660 100%)"></div>
+  <div style="position: absolute; left: 96px; top: 156px; display: flex; flex-direction: column; gap: 22px">
+    <span class="bp-eyebrow">Ready on Mac</span>
+    <span class="bp-title">[Game title]</span>
+  </div>
+  <div class="bp-dim"></div>
+
+  <section class="bp-group" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 900px; padding: 48px 56px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 22px; text-align: center; background: rgba(22,22,24,.97); border-color: rgba(255,255,255,.1); box-shadow: 0 24px 60px rgba(0,0,0,.55); z-index: 3" aria-label="No controller">
+    <svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="#fff0d6" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12a4 4 0 0 1 4 4v2a3 3 0 0 1-5.4 1.8L15 14H9l-1.6 1.8A3 3 0 0 1 2 14v-2a4 4 0 0 1 4-4z"></path><path d="M7 10.5v3M5.5 12h3"></path></svg>
+    <h2 style="margin: 0; font: 800 44px/1.1 Manrope, sans-serif; letter-spacing: -1px; color: #fff">Connect a controller</h2>
+    <p style="margin: 0; font: 500 22px/1.45 Manrope, sans-serif; color: var(--text-secondary)">Turn on a controller you already paired, or plug one in with a cable. A new controller pairs in System Settings, Bluetooth.</p>
+    <div style="display: flex; gap: 16px; margin-top: 8px">
+      <span class="bp-play bp-focus" style="height: 64px; font-size: 22px; padding: 0 30px">Open Bluetooth settings</span>
+      <span class="bp-btn" style="height: 64px; font-size: 20px">Back to the desktop</span>
+    </div>
+    <span style="font: 500 18px/1.4 Manrope, sans-serif; color: var(--text-secondary)">This closes by itself as soon as a controller connects.</span>
+  </section>
+
+  <div style="position: absolute; right: 72px; top: 120px; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; z-index: 4">
+    <span style="font: 600 14px/1 Manrope, sans-serif; color: rgba(255,255,255,.55)">[Also: the toast when a controller drops mid-session]</span>
+    <div style="display: flex; align-items: center; gap: 14px; padding: 16px 22px; border-radius: 999px; background: rgba(26,26,28,.96); border: 1px solid rgba(255,199,61,.4); box-shadow: 0 12px 30px rgba(0,0,0,.5)">
+      <span class="bp-g" style="background: #ffc73d; color: #000">P2</span>
+      <span style="font: 600 20px/1.2 Manrope, sans-serif; color: #fff">Xbox Wireless disconnected</span>
+      <span style="font: 500 18px/1.2 Manrope, sans-serif; color: var(--text-secondary)">battery was at 12%</span>
+    </div>
+  </div>
+
+  <footer class="bp-hints" style="z-index: 4">
+    <span class="bp-hint" style="color: var(--text-secondary)">Keyboard</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-hint"><span class="key">← →</span>Move</span>
+    <span class="bp-hint"><span class="key">esc</span>Back</span>
+    <span class="bp-hint"><span class="key">return</span>Choose</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

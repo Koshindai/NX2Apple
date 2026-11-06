@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Console mode Library</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/nx2apple-launcher/components/bundle.css">
+<link rel="stylesheet" href="bp.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="bp" style="font-family: Manrope, system-ui, sans-serif">
+  <header class="bp-top">
+    <span class="bp-word">Library</span>
+    <span class="bp-icon" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M16 16l4 4M11 17a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"></path></svg></span>
+    <span class="bp-spacer"></span>
+    <span class="bp-pad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12a4 4 0 0 1 4 4v2a3 3 0 0 1-5.4 1.8L15 14H9l-1.6 1.8A3 3 0 0 1 2 14v-2a4 4 0 0 1 4-4z"></path><path d="M7 10.5v3M5.5 12h3"></path></svg><span class="bp-pad__p">P1</span><span class="bp-pad__batt">78%</span></span>
+    <span class="bp-clock">21:42</span>
+  </header>
+
+  <section style="position: absolute; left: 96px; right: 96px; top: 132px; display: flex; flex-direction: column; gap: 28px">
+    <div style="display: flex; align-items: center; gap: 14px">
+      <nav class="bp-nav" aria-label="Filters">
+        <span class="bp-g bp-g--sm">LB</span>
+        <span class="bp-tab" aria-selected="true">All <small style="opacity: .6">24</small></span>
+        <span class="bp-tab">Ready on Mac <small style="opacity: .6">14</small></span>
+        <span class="bp-tab">Not compiled <small style="opacity: .6">7</small></span>
+        <span class="bp-tab">Needs game data <small style="opacity: .6">3</small></span>
+        <span class="bp-g bp-g--sm">RB</span>
+      </nav>
+    </div>
+    <h2 class="bp-shelf-title" style="font-size: 26px">All games <small>24 · recently played first</small></h2>
+
+    <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); column-gap: 32px; row-gap: 40px">
+      <div>
+        <div class="bp-tile" data-label="[Game title]" style="--w: 100%; --art: linear-gradient(125deg,#1f3a4d 0%,#3d6b5a 45%,#e0b660 100%)"></div>
+        <div class="bp-cap"><span class="bp-cap__name">[Game title]</span><span class="nx-status nx-status--ready" style="font-size: 18px">Ready on Mac</span></div>
+      </div>
+      <div>
+        <div class="bp-tile is-focus" data-label="[Game B]" style="--w: 100%; --art: linear-gradient(140deg,#4a1f2c,#a8452f 60%,#f2a65a); --glow: #f2a65a"></div>
+        <div class="bp-cap"><span class="bp-cap__name">[Game B]</span><span class="nx-status nx-status--ready" style="font-size: 18px">Ready on Mac and iPhone</span></div>
+      </div>
+      <div>
+        <div class="bp-tile" data-label="[Game C]" style="--w: 100%; --art: linear-gradient(160deg,#16243f,#2f5f8f 55%,#9fd0e0)"><span class="bp-tile__progress" style="--p: 62%"><i></i></span></div>
+        <div class="bp-cap"><span class="bp-cap__name">[Game C]</span><span class="nx-status nx-status--building" style="font-size: 18px">Compiling 62%</span></div>
+      </div>
+      <div>
+        <div class="bp-tile" data-label="[Game D]" style="--w: 100%; --art: linear-gradient(130deg,#2a2a1e,#6b7a3a 55%,#d8d08a)"></div>
+        <div class="bp-cap"><span class="bp-cap__name">[Game D]</span><span class="nx-status nx-status--ready" style="font-size: 18px">Ready on Mac</span></div>
+      </div>
+      <div>
+        <div class="bp-tile" data-label="[Game E]" style="--w: 100%; --art: linear-gradient(150deg,#3a1d3f,#7a3e5c 50%,#e8a0a0)"></div>
+        <div class="bp-cap"><span class="bp-cap__name">[Game E]</span><span class="nx-status nx-status--ready" style="font-size: 18px">Ready on Mac</span></div>
+      </div>
+      <div>
+        <div class="bp-tile" data-label="[Game F]" style="--w: 100%; --art: linear-gradient(120deg,#102a2a,#1f6b66 55%,#7fd6b8); filter: saturate(.35) brightness(.7)"></div>
+        <div class="bp-cap"><span class="bp-cap__name">[Game F]</span><span class="nx-status nx-status--unbuilt" style="font-size: 18px">Not compiled yet</span></div>
+      </div>
+      <div>
+        <div class="bp-tile" data-label="[Game G]" style="--w: 100%; --art: linear-gradient(135deg,#3b2a5c 0%,#b4553c 55%,#f0b45a 100%)"></div>
+        <div class="bp-cap"><span class="bp-cap__name">[Game G]</span><span class="nx-status nx-status--ready" style="font-size: 18px">Ready for iPhone</span></div>
+      </div>
+      <div>
+        <div class="bp-tile" style="--w: 100%; --art: linear-gradient(160deg,rgba(255,240,214,.42) 0%,#1a1a1c 60%,#0e0e0f 100%); display: flex; align-items: flex-start"><span style="padding: 18px; font: 700 24px/1.1 Manrope, sans-serif; color: rgba(255,240,214,.9)">[Game without artwork]</span></div>
+        <div class="bp-cap"><span class="bp-cap__name">[Game H]</span><span class="nx-status nx-status--building" style="font-size: 18px">Needs game data</span></div>
+      </div>
+      <div>
+        <div class="bp-tile" data-label="[Game I]" style="--w: 100%; --art: linear-gradient(140deg,#1d2b1f,#3f6a3a 55%,#b8d68a)"></div>
+        <div class="bp-cap"><span class="bp-cap__name">[Game I]</span><span class="nx-status nx-status--ready" style="font-size: 18px">Ready on Mac</span></div>
+      </div>
+      <div>
+        <div class="bp-tile" data-label="[Game J]" style="--w: 100%; --art: linear-gradient(125deg,#2c1f14,#7a4a26 55%,#e6b98a); filter: saturate(.35) brightness(.7)"></div>
+        <div class="bp-cap"><span class="bp-cap__name">[Game J]</span><span class="nx-status nx-status--unbuilt" style="font-size: 18px">Not compiled yet</span></div>
+      </div>
+      <div>
+        <div class="bp-tile" data-label="[Game K]" style="--w: 100%; --art: linear-gradient(150deg,#14202e,#2e4a6b 55%,#c0d4e8)"></div>
+      </div>
+      <div>
+        <div class="bp-tile" data-label="[Game L]" style="--w: 100%; --art: linear-gradient(130deg,#30182a,#6a2f4f 55%,#d88aa8)"></div>
+      </div>
+      <div>
+        <div class="bp-tile" data-label="[Game M]" style="--w: 100%; --art: linear-gradient(120deg,#1b2a1b,#4f6b2f 55%,#d8e08a)"></div>
+      </div>
+      <div>
+        <div class="bp-tile" data-label="[Game N]" style="--w: 100%; --art: linear-gradient(145deg,#2a1f12,#8a5a20 55%,#f0c870)"></div>
+      </div>
+      <div>
+        <div class="bp-tile" data-label="[Game O]" style="--w: 100%; --art: linear-gradient(160deg,#101820,#24485a 55%,#88c0c8)"></div>
+      </div>
+    </div>
+  </section>
+
+  <div style="position: absolute; right: 30px; top: 300px; display: flex; flex-direction: column; align-items: center; gap: 6px; font: 700 18px/1 Manrope, sans-serif; color: rgba(235,235,245,.45)">
+    <span>#</span><span>A</span><span style="color: #fff0d6; font-size: 22px">B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>…</span><span>Z</span>
+  </div>
+
+  <footer class="bp-hints">
+    <span class="bp-hint"><span class="bp-g bp-g--icon" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"></path></svg></span>Menu</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-hint"><span class="bp-g">Y</span>Sort</span>
+    <span class="bp-hint"><span class="bp-g">X</span>Play</span>
+    <span class="bp-hint"><span class="bp-g">B</span>Back</span>
+    <span class="bp-hint"><span class="bp-g bp-g--a">A</span>Game page</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

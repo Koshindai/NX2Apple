@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Console mode settings</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/nx2apple-launcher/components/bundle.css">
+<link rel="stylesheet" href="bp.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap">
+<style>
+body{margin:0}
+.radio{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.35);box-sizing:border-box;flex:none}
+.radio.on{border:8px solid #fff0d6}
+.val{display:inline-flex;align-items:center;gap:18px;min-width:300px;justify-content:space-between;font:700 23px/1 Manrope,sans-serif;color:#fff0d6}
+.val i{font-style:normal;color:rgba(255,240,214,.55);font-size:20px}
+.note{font:500 18px/1.35 Manrope,sans-serif;color:rgba(235,235,245,.6)}
+.dot{width:10px;height:10px;border-radius:50%;background:#fff0d6;flex:none}
+.cat{display:flex;align-items:center;gap:16px;height:64px;padding:0 22px;border-radius:14px;font:600 23px/1 Manrope,sans-serif;color:rgba(255,255,255,.75);position:relative}
+.cat small{margin-left:auto;font:500 18px/1 Manrope,sans-serif;color:rgba(235,235,245,.6)}
+.cat.on{background:rgba(255,255,255,.1);color:#fff;font-weight:800}
+.cat.on::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:4px;border-radius:4px;background:#fff0d6}
+.dlg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);box-sizing:border-box;padding:44px 48px;border-radius:24px;background:rgba(26,26,28,.98);border:1px solid rgba(255,255,255,.12);box-shadow:0 24px 60px rgba(0,0,0,.55);z-index:3;display:flex;flex-direction:column;gap:18px}
+.dlg h2{margin:0;font:800 40px/1.1 Manrope,sans-serif;letter-spacing:-.8px;color:#fff}
+.dlg p{margin:0;font:500 21px/1.45 Manrope,sans-serif;color:rgba(235,235,245,.7)}
+.danger{background:rgba(255,107,102,.14);border-color:rgba(255,107,102,.45);color:#ff6b66}
+.callout{display:flex;gap:18px;align-items:flex-start;padding:22px 26px;border-radius:14px;background:rgba(255,199,61,.08);border:1px solid rgba(255,199,61,.35)}
+</style>
+</helmet>
+<div class="bp" style="font-family: Manrope, system-ui, sans-serif">
+  <header class="bp-top">
+    <span class="bp-word">Settings</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-pad"><span class="bp-pad__p">P1</span><span class="bp-pad__batt">78%</span></span>
+    <span class="bp-clock">21:42</span>
+  </header>
+  <nav style="position: absolute; left: 72px; top: 136px; width: 420px; display: flex; flex-direction: column; gap: 6px" aria-label="Settings sections">
+    <span class="cat on">General</span>
+    <span class="cat">Controllers<small>2 connected</small></span>
+    <span class="cat">Home button<small style="color: #ffc73d">Needs a step</small></span>
+    <span class="cat">About</span>
+  </nav>
+  <section style="position: absolute; left: 540px; right: 96px; top: 136px; display: flex; flex-direction: column; gap: 22px">
+    <div class="callout">
+      <span class="dot" style="background: #ffc73d; width: 14px; height: 14px; margin-top: 8px"></span>
+      <div style="display: flex; flex-direction: column; gap: 8px; flex: 1 1 auto">
+        <span style="font: 700 24px/1.2 Manrope, sans-serif; color: #fff">Quit with the Home button</span>
+        <span class="note" style="font-size: 19px">In a game, hold Home for 2 seconds to quit it. Right now your Mac keeps the Home button for itself.</span>
+      </div>
+      <span class="bp-btn" style="height: 60px; align-self: center">Open Settings</span>
+    </div>
+    <div class="bp-group" style="padding: 12px; display: flex; flex-direction: column; gap: 2px">
+      <div class="bp-row is-focus" style="height: auto; padding: 18px 22px; flex-wrap: wrap; row-gap: 8px">Start in console mode<span class="bp-spacer"></span><span class="bp-switch" aria-checked="true"></span><span class="note" style="flex-basis: 100%">Opens console mode every time the launcher starts, with or without a controller.</span></div>
+      <div class="bp-row" style="height: auto; padding: 18px 22px; flex-wrap: wrap; row-gap: 8px">Offer console mode when a controller connects<span class="bp-spacer"></span><span class="bp-switch" aria-checked="true"></span><span class="note" style="flex-basis: 100%">At most once each time the launcher starts.</span></div>
+      <div class="bp-row" style="height: 76px">Controller vibration<span class="bp-spacer"></span><span class="bp-switch" aria-checked="true"></span></div>
+      <div class="bp-row" style="height: 76px">Button glyphs<span class="bp-spacer"></span><span class="val"><i>◀</i>Match the controller<i>▶</i></span></div>
+    </div>
+    <div class="bp-group" style="padding: 12px">
+      <div class="bp-row" style="height: 76px">Back to desktop<span class="bp-row__end">Select, then Back to desktop, works too</span></div>
+    </div>
+  </section>
+  <footer class="bp-hints">
+    <span class="bp-hint"><span class="bp-g bp-g--icon" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"></path></svg></span>Menu</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-hint"><span class="bp-g">B</span>Back</span>
+    <span class="bp-hint"><span class="bp-g bp-g--a">A</span>Switch</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

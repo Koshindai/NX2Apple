@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Console mode Game page</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/nx2apple-launcher/components/bundle.css">
+<link rel="stylesheet" href="bp.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="bp" style="font-family: Manrope, system-ui, sans-serif">
+  <div class="bp-backdrop" data-label="[Hero artwork, wide crop]" style="--art: linear-gradient(140deg,#4a1f2c,#a8452f 60%,#f2a65a)"></div>
+
+  <header class="bp-top">
+    <span class="bp-hint" style="color: var(--text-secondary)"><span class="bp-g">B</span>Library</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-pad"><span class="bp-pad__p">P1</span><span class="bp-pad__batt">78%</span></span>
+    <span class="bp-clock">21:42</span>
+  </header>
+
+  <section style="position: absolute; left: 96px; top: 210px; width: 1500px; display: flex; flex-direction: column; gap: 20px; z-index: 1">
+    <span class="bp-eyebrow">Ready on Mac and iPhone</span>
+    <h1 class="bp-title">[Game B]</h1>
+  </section>
+
+  <section style="position: absolute; left: 96px; right: 96px; top: 440px; display: flex; align-items: center; gap: 44px; z-index: 1">
+    <span class="bp-play bp-focus" style="min-width: 220px; justify-content: center">Play</span>
+    <div style="display: flex; flex-direction: column; gap: 8px"><span class="bp-label">Last played</span><span style="font: 700 24px/1.1 Manrope, sans-serif; color: #fff">Yesterday</span></div>
+    <div style="display: flex; flex-direction: column; gap: 8px"><span class="bp-label">Play time</span><span style="font: 700 24px/1.1 Manrope, sans-serif; color: #fff">14 h 20 min</span></div>
+    <div style="display: flex; flex-direction: column; gap: 8px"><span class="bp-label">Saves</span><span style="font: 700 24px/1.1 Manrope, sans-serif; color: #40d678">In sync</span></div>
+    <span class="bp-spacer"></span>
+    <span class="bp-btn bp-btn--round" aria-label="Controls"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12a4 4 0 0 1 4 4v2a3 3 0 0 1-5.4 1.8L15 14H9l-1.6 1.8A3 3 0 0 1 2 14v-2a4 4 0 0 1 4-4zM7 10.5v3M5.5 12h3"></path></svg></span>
+    <span class="bp-btn bp-btn--round" aria-label="Launch options"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8M16 5v4M10 15v4"></path></svg></span>
+    <span class="bp-btn bp-btn--round" aria-label="Manage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01"></path></svg></span>
+  </section>
+
+  <nav class="bp-nav" aria-label="Game page tabs" style="position: absolute; left: 0; right: 0; top: 580px; justify-content: center; z-index: 1">
+    <span class="bp-g bp-g--sm">LB</span>
+    <span class="bp-tab" aria-selected="true">Overview</span>
+    <span class="bp-tab">Saves</span>
+    <span class="bp-tab">Build</span>
+    <span class="bp-tab">Cheats</span>
+    <span class="bp-g bp-g--sm">RB</span>
+  </nav>
+
+  <section style="position: absolute; left: 96px; right: 96px; top: 680px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; z-index: 1">
+    <div class="bp-group" style="padding: 22px 26px; display: flex; flex-direction: column; gap: 10px">
+      <span style="display: flex; align-items: center"><span class="bp-label">Launch options</span><span class="bp-chev">›</span></span>
+      <span style="font: 600 24px/1.3 Manrope, sans-serif; color: #fff">Full screen · 1440p · 60 fps</span>
+      <span style="font: 500 19px/1.3 Manrope, sans-serif; color: var(--text-secondary)">2 changed from the defaults</span>
+    </div>
+    <div class="bp-group" style="padding: 22px 26px; display: flex; flex-direction: column; gap: 10px">
+      <span style="display: flex; align-items: center"><span class="bp-label">Controllers</span><span class="bp-chev">›</span></span>
+      <span style="font: 600 24px/1.3 Manrope, sans-serif; color: #fff">2 players · By label</span>
+      <span style="font: 500 19px/1.3 Manrope, sans-serif; color: var(--text-secondary)">P2 battery at 12%</span>
+    </div>
+    <div class="bp-group" style="padding: 22px 26px; display: flex; flex-direction: column; gap: 10px">
+      <span style="display: flex; align-items: center"><span class="bp-label">Version</span><span class="bp-chev">›</span></span>
+      <span style="font: 600 24px/1.3 Manrope, sans-serif; color: #fff">1.2.0</span>
+      <span style="font: 500 19px/1.3 Manrope, sans-serif; color: var(--text-secondary)">Update included</span>
+    </div>
+  </section>
+
+  <footer class="bp-hints">
+    <span class="bp-hint"><span class="bp-g bp-g--icon" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"></path></svg></span>Menu</span>
+    <span class="bp-hint"><span class="bp-g bp-g--icon" aria-label="View"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5h10v9H9zM5 9v10h10"></path></svg></span>Quick menu</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-hint"><span class="bp-g">B</span>Back</span>
+    <span class="bp-hint"><span class="bp-g bp-g--a">A</span>Play</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

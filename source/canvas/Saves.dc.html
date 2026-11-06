@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Console mode saves</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/nx2apple-launcher/components/bundle.css">
+<link rel="stylesheet" href="bp.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap">
+<style>
+body{margin:0}
+.radio{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.35);box-sizing:border-box;flex:none}
+.radio.on{border:8px solid #fff0d6}
+.val{display:inline-flex;align-items:center;gap:18px;min-width:300px;justify-content:space-between;font:700 23px/1 Manrope,sans-serif;color:#fff0d6}
+.val i{font-style:normal;color:rgba(255,240,214,.55);font-size:20px}
+.note{font:500 18px/1.35 Manrope,sans-serif;color:rgba(235,235,245,.6)}
+.dot{width:10px;height:10px;border-radius:50%;background:#fff0d6;flex:none}
+.cat{display:flex;align-items:center;gap:16px;height:64px;padding:0 22px;border-radius:14px;font:600 23px/1 Manrope,sans-serif;color:rgba(255,255,255,.75);position:relative}
+.cat small{margin-left:auto;font:500 18px/1 Manrope,sans-serif;color:rgba(235,235,245,.6)}
+.cat.on{background:rgba(255,255,255,.1);color:#fff;font-weight:800}
+.cat.on::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:4px;border-radius:4px;background:#fff0d6}
+.dlg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);box-sizing:border-box;padding:44px 48px;border-radius:24px;background:rgba(26,26,28,.98);border:1px solid rgba(255,255,255,.12);box-shadow:0 24px 60px rgba(0,0,0,.55);z-index:3;display:flex;flex-direction:column;gap:18px}
+.dlg h2{margin:0;font:800 40px/1.1 Manrope,sans-serif;letter-spacing:-.8px;color:#fff}
+.dlg p{margin:0;font:500 21px/1.45 Manrope,sans-serif;color:rgba(235,235,245,.7)}
+.danger{background:rgba(255,107,102,.14);border-color:rgba(255,107,102,.45);color:#ff6b66}
+.callout{display:flex;gap:18px;align-items:flex-start;padding:22px 26px;border-radius:14px;background:rgba(255,199,61,.08);border:1px solid rgba(255,199,61,.35)}
+</style>
+</helmet>
+<div class="bp" style="font-family: Manrope, system-ui, sans-serif">
+  <div class="bp-backdrop" style="--art: linear-gradient(140deg,#4a1f2c,#a8452f 60%,#f2a65a)"></div>
+  <header class="bp-top">
+    <span class="bp-hint" style="color: var(--text-secondary)"><span class="bp-g">B</span>Library</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-pad"><span class="bp-pad__p">P1</span><span class="bp-pad__batt">78%</span></span>
+    <span class="bp-clock">21:42</span>
+  </header>
+  <section style="position: absolute; left: 96px; top: 150px; display: flex; flex-direction: column; gap: 16px; z-index: 1">
+    <span class="bp-eyebrow">Ready on Mac and iPhone</span>
+    <h1 class="bp-title" style="font-size: 64px">[Game B]</h1>
+  </section>
+  <section style="position: absolute; left: 96px; right: 96px; top: 320px; display: flex; align-items: center; gap: 44px; z-index: 1">
+    <span class="bp-play" style="min-width: 220px; justify-content: center">Play</span>
+    <div style="display: flex; flex-direction: column; gap: 8px"><span class="bp-label">Last played</span><span style="font: 700 24px/1.1 Manrope, sans-serif; color: #fff">Yesterday</span></div>
+    <div style="display: flex; flex-direction: column; gap: 8px"><span class="bp-label">Play time</span><span style="font: 700 24px/1.1 Manrope, sans-serif; color: #fff">14 h 20 min</span></div>
+  </section>
+  <nav class="bp-nav" style="position: absolute; left: 0; right: 0; top: 440px; justify-content: center; z-index: 1"><span class="bp-g bp-g--sm">LB</span><span class="bp-tab">Overview</span><span class="bp-tab" aria-selected="true">Saves</span><span class="bp-tab">Build</span><span class="bp-tab">Cheats</span><span class="bp-g bp-g--sm">RB</span></nav>
+  <section style="position: absolute; left: 96px; right: 96px; top: 530px; display: grid; grid-template-columns: 1.3fr 1fr; gap: 28px; z-index: 1">
+    <div class="bp-group is-focus" style="padding: 28px 30px; display: flex; flex-direction: column; gap: 16px">
+      <span class="bp-label">Cloud saves</span>
+      <span style="display: flex; align-items: center; gap: 14px; font: 700 30px/1.2 Manrope, sans-serif; color: #40d678"><span class="dot" style="background: #40d678; width: 14px; height: 14px"></span>In step with the cloud</span>
+      <span class="note" style="font-size: 20px">Last session, yesterday at 22:14 · sent from this Mac</span>
+      <div style="height: 1px; background: rgba(255,255,255,.1); margin: 6px 0"></div>
+      <span style="display: flex; align-items: center; gap: 14px"><span class="bp-label">Folder</span><span style="font: 600 22px/1.2 Manrope, sans-serif; color: #fff">iCloud Drive › NX2Apple Saves</span></span>
+      <span class="note">Use the same folder on your iPhone or iPad. Change it on the desktop.</span>
+    </div>
+    <div class="bp-group" style="padding: 28px 30px; display: flex; flex-direction: column; gap: 14px">
+      <span class="bp-label">What this card can say</span>
+      <span style="display: flex; gap: 12px; align-items: baseline"><span class="dot" style="background: #ffc73d"></span><span style="font: 600 20px/1.35 Manrope, sans-serif; color: #fff">A newer save came from the cloud (from iPhone)</span></span>
+      <span style="display: flex; gap: 12px; align-items: baseline"><span class="dot" style="background: #ffc73d"></span><span style="font: 600 20px/1.35 Manrope, sans-serif; color: #fff">A newer save was not sent yet. It goes at the next start.</span></span>
+      <span style="display: flex; gap: 12px; align-items: baseline"><span class="dot" style="background: #ff6b66"></span><span style="font: 600 20px/1.35 Manrope, sans-serif; color: #fff">Sync failed: the folder is not reachable</span></span>
+      <span style="display: flex; gap: 12px; align-items: baseline"><span class="dot" style="background: #91949c"></span><span style="font: 600 20px/1.35 Manrope, sans-serif; color: #fff">Off · Choose a folder on the desktop</span></span>
+    </div>
+  </section>
+  <footer class="bp-hints">
+    <span class="bp-hint"><span class="bp-g bp-g--icon" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"></path></svg></span>Menu</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-hint"><span class="bp-g">X</span>Play</span>
+    <span class="bp-hint"><span class="bp-g">B</span>Back</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

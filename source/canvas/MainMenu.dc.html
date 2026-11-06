@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Console mode Main menu</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/nx2apple-launcher/components/bundle.css">
+<link rel="stylesheet" href="bp.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="bp" style="font-family: Manrope, system-ui, sans-serif">
+  <div class="bp-backdrop" style="--art: linear-gradient(125deg,#1f3a4d 0%,#3d6b5a 45%,#e0b660 100%)"></div>
+  <div style="position: absolute; left: 96px; top: 300px; display: flex; flex-direction: column; gap: 22px">
+    <span class="bp-eyebrow">Ready on Mac</span>
+    <span class="bp-title">[Game title]</span>
+  </div>
+  <div class="bp-dim"></div>
+
+  <aside class="bp-panel" style="left: 0; width: 480px; padding: 48px 28px 110px; border-right: 1px solid var(--line-2); gap: 6px" aria-label="Main menu">
+    <div style="padding: 0 22px 34px; display: flex; flex-direction: column; gap: 6px">
+      <span class="bp-word" style="font-size: 34px">NX2Apple</span>
+      <span style="font: 500 18px/1 Manrope, sans-serif; color: var(--unbuilt)">— by nxnative</span>
+    </div>
+    <button class="bp-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"></path></svg>Home<span class="bp-row__end" style="display: inline-flex; align-items: center; gap: 8px; color: #fff0d6"><i style="width: 8px; height: 8px; border-radius: 50%; background: #fff0d6"></i>You are here</span></button>
+    <button class="bp-row is-focus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12a4 4 0 0 1 4 4v2a3 3 0 0 1-5.4 1.8L15 14H9l-1.6 1.8A3 3 0 0 1 2 14v-2a4 4 0 0 1 4-4z"></path><path d="M7 10.5v3M5.5 12h3"></path></svg>Library<span class="bp-row__end">24</span></button>
+    <button class="bp-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5L12 3l9 4.5v9L12 21l-9-4.5z"></path><path d="M3 7.5l9 4.5 9-4.5M12 12v9"></path></svg>Builds<span class="bp-row__end" style="color: var(--building)">1 running</span></button>
+    <button class="bp-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg>Search</button>
+    <button class="bp-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>Settings</button>
+    <div class="bp-sep"></div>
+    <button class="bp-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"></rect><path d="M8 21h8M12 17v4"></path></svg>Back to the desktop</button>
+    <button class="bp-row bp-row--danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M12 3v9"></path><path d="M6.3 6.8a8 8 0 1 0 11.4 0"></path></svg>Quit NX2Apple</button>
+  </aside>
+
+  <footer class="bp-hints" style="z-index: 4">
+    <span class="bp-spacer"></span>
+    <span class="bp-hint"><span class="bp-g">B</span>Close</span>
+    <span class="bp-hint"><span class="bp-g bp-g--a">A</span>Open</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

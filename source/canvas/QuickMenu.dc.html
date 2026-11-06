@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Console mode Quick menu</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/nx2apple-launcher/components/bundle.css">
+<link rel="stylesheet" href="bp.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="bp" style="font-family: Manrope, system-ui, sans-serif">
+  <div class="bp-backdrop" style="--art: linear-gradient(125deg,#1f3a4d 0%,#3d6b5a 45%,#e0b660 100%)"></div>
+  <div style="position: absolute; left: 96px; top: 300px; display: flex; flex-direction: column; gap: 22px">
+    <span class="bp-eyebrow">Ready on Mac</span>
+    <span class="bp-title">[Game title]</span>
+  </div>
+  <div class="bp-dim"></div>
+
+  <aside class="bp-panel" style="right: 0; width: 640px; border-left: 1px solid var(--line-2)" aria-label="Quick menu">
+    <nav style="display: flex; align-items: center; gap: 6px; padding: 32px 28px 0" aria-label="Quick menu sections">
+      <span class="bp-g bp-g--sm">LB</span>
+      <span class="bp-tab" style="font-size: 19px; padding: 12px 18px">Alerts</span>
+      <span class="bp-tab" aria-selected="true" style="font-size: 19px; padding: 12px 18px">Controllers</span>
+      <span class="bp-tab" style="font-size: 19px; padding: 12px 18px">Display</span>
+      <span class="bp-g bp-g--sm">RB</span>
+    </nav>
+    <div style="flex: 1 1 auto; padding: 28px 36px 110px; display: flex; flex-direction: column; gap: 22px">
+      
+      <div class="bp-group" style="padding: 8px">
+        <div class="bp-row is-focus" style="height: 76px">
+          <span class="bp-g" style="background: var(--cream); color: var(--on-cream)">P1</span>
+          <span style="display: flex; flex-direction: column; gap: 4px"><span>DualSense</span><span style="font: 500 18px/1 Manrope, sans-serif; color: var(--text-secondary)">Bluetooth · 78%</span></span>
+          <span class="bp-row__end">Identify</span>
+        </div>
+        <div class="bp-row" style="height: 76px">
+          <span class="bp-g" style="background: var(--cream); color: var(--on-cream)">P2</span>
+          <span style="display: flex; flex-direction: column; gap: 4px"><span>Xbox Wireless</span><span style="font: 500 18px/1 Manrope, sans-serif; color: var(--building)">Battery low · 12%</span></span>
+        </div>
+        <div class="bp-row" style="height: 76px">
+          <span class="bp-g">P3</span>
+          <span style="display: flex; flex-direction: column; gap: 4px"><span style="color: var(--text-secondary)">Waiting for a controller</span><span style="font: 500 18px/1 Manrope, sans-serif; color: var(--text-secondary)">Press any button on it</span></span>
+        </div>
+      </div>
+
+      <div class="bp-group" style="padding: 8px">
+        <div class="bp-row" style="height: 76px">All controllers are player 1<span class="bp-spacer"></span><span class="bp-switch" role="switch" aria-checked="false" aria-label="All controllers are player 1"></span></div>
+        <div class="bp-row" style="height: 76px">Button layout<span class="bp-row__end">By label</span></div>
+      </div>
+
+      <span class="bp-label" style="margin: 10px 0 0 4px">In games</span>
+      <div class="bp-group" style="padding: 8px">
+        <div class="bp-row" style="height: 76px">Frame rate overlay<span class="bp-spacer"></span><span class="bp-switch" role="switch" aria-checked="true" aria-label="Frame rate overlay"></span></div>
+      </div>
+    </div>
+  </aside>
+
+  <footer class="bp-hints" style="z-index: 4">
+    <span class="bp-spacer"></span>
+    <span class="bp-hint"><span class="bp-g">B</span>Close</span>
+    <span class="bp-hint"><span class="bp-g bp-g--a">A</span>Identify</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

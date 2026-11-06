@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Console mode search</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/nx2apple-launcher/components/bundle.css">
+<link rel="stylesheet" href="bp.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap">
+<style>
+body{margin:0}
+.kb-row{display:flex;justify-content:center;gap:12px}
+.key{width:104px;height:80px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);display:inline-flex;align-items:center;justify-content:center;font:600 30px/1 Manrope,sans-serif;color:#fff;box-sizing:border-box}
+.key--wide{width:220px;font-size:22px;gap:10px}
+.key--space{width:560px;font-size:22px;color:rgba(235,235,245,.6)}
+.key--go{width:220px;font-size:22px;background:#fff0d6;color:#000;border-color:#fff0d6;font-weight:800}
+.key.is-focus{background:rgba(255,255,255,.18);outline:3px solid #fff0d6;outline-offset:2px}
+</style>
+</helmet>
+<div class="bp" style="font-family: Manrope, system-ui, sans-serif">
+  <header class="bp-top">
+    <span class="bp-word">Search</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-pad"><span class="bp-pad__p">P1</span><span class="bp-pad__batt">78%</span></span>
+    <span class="bp-clock">21:42</span>
+  </header>
+
+  <div style="position: absolute; left: 96px; right: 96px; top: 116px; height: 76px; box-sizing: border-box; padding: 0 28px; display: flex; align-items: center; gap: 18px; border-radius: 999px; background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.22)">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="rgba(235,235,245,.6)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M16 16l4 4M11 17a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"></path></svg>
+    <span style="font: 600 30px/1 Manrope, sans-serif; color: #fff">ga</span><span style="width: 3px; height: 34px; margin-left: -14px; background: #fff0d6; border-radius: 2px"></span>
+    <span class="bp-spacer"></span>
+    <span style="font: 500 20px/1 Manrope, sans-serif; color: var(--text-secondary)">3 games</span>
+  </div>
+
+  <section style="position: absolute; left: 96px; right: 96px; top: 230px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 32px">
+    <div>
+      <div class="bp-tile" data-label="[Game title]" style="--w: 100%; --art: linear-gradient(125deg,#1f3a4d 0%,#3d6b5a 45%,#e0b660 100%)"></div>
+      <div class="bp-cap"><span class="bp-cap__name"><b style="color: #fff0d6">[Ga</b>me title]</span><span class="nx-status nx-status--ready" style="font-size: 18px">Ready on Mac</span></div>
+    </div>
+    <div>
+      <div class="bp-tile" data-label="[Game G]" style="--w: 100%; --art: linear-gradient(135deg,#3b2a5c 0%,#b4553c 55%,#f0b45a 100%)"></div>
+      <div class="bp-cap"><span class="bp-cap__name"><b style="color: #fff0d6">[Ga</b>me G]</span><span class="nx-status nx-status--ready" style="font-size: 18px">Ready on Mac</span></div>
+    </div>
+    <div>
+      <div class="bp-tile" data-label="[Game J]" style="--w: 100%; --art: linear-gradient(125deg,#2c1f14,#7a4a26 55%,#e6b98a); filter: saturate(.35) brightness(.7)"></div>
+      <div class="bp-cap"><span class="bp-cap__name"><b style="color: #fff0d6">[Ga</b>me J]</span><span class="nx-status nx-status--unbuilt" style="font-size: 18px">Not compiled yet</span></div>
+    </div>
+  </section>
+
+  <section style="position: absolute; left: 0; right: 0; top: 548px; bottom: 84px; display: flex; flex-direction: column; justify-content: center; gap: 12px; background: rgba(20,20,22,.96); border-top: 1px solid rgba(255,255,255,.1)" aria-label="On-screen keyboard">
+    <div class="kb-row"><span class="key">q</span><span class="key">w</span><span class="key">e</span><span class="key">r</span><span class="key">t</span><span class="key">y</span><span class="key">u</span><span class="key">i</span><span class="key">o</span><span class="key">p</span></div>
+    <div class="kb-row"><span class="key">a</span><span class="key">s</span><span class="key">d</span><span class="key">f</span><span class="key">g</span><span class="key">h</span><span class="key">j</span><span class="key">k</span><span class="key">l</span></div>
+    <div class="kb-row"><span class="key key--wide">123</span><span class="key">z</span><span class="key">x</span><span class="key">c</span><span class="key">v</span><span class="key">b</span><span class="key">n</span><span class="key is-focus">m</span><span class="key key--wide" aria-label="Delete"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5h11v14H9l-6-7z"></path><path d="M12 9l5 6M17 9l-5 6"></path></svg></span></div>
+    <div class="kb-row"><span class="key key--space">space</span><span class="key key--go">Done</span></div>
+  </section>
+
+  <footer class="bp-hints">
+    <span class="bp-hint"><span class="bp-g">LB</span>Move cursor<span class="bp-g">RB</span></span>
+    <span class="bp-spacer"></span>
+    <span class="bp-hint"><span class="bp-g">X</span>Delete</span>
+    <span class="bp-hint"><span class="bp-g">Y</span>Space</span>
+    <span class="bp-hint"><span class="bp-g bp-g--icon" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"></path></svg></span>Done</span>
+    <span class="bp-hint"><span class="bp-g">B</span>Close keyboard</span>
+    <span class="bp-hint"><span class="bp-g bp-g--a">A</span>Type</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

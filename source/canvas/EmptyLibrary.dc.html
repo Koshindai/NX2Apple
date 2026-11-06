@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Console mode empty library</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/nx2apple-launcher/components/bundle.css">
+<link rel="stylesheet" href="bp.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="bp" style="font-family: Manrope, system-ui, sans-serif">
+  <div style="position: absolute; inset: 0; background: radial-gradient(900px 520px at 50% 42%, rgba(255,240,214,.08), rgba(14,14,15,0) 70%)"></div>
+
+  <header class="bp-top">
+    <span class="bp-word">Home</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-pad"><span class="bp-pad__p">P1</span><span class="bp-pad__batt">78%</span></span>
+    <span class="bp-clock">21:42</span>
+  </header>
+
+  <section style="position: absolute; left: 50%; top: 220px; width: 1000px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 26px; text-align: center; z-index: 1">
+    <svg width="140" height="140" viewBox="0 0 24 24" fill="none" stroke="rgba(255,240,214,.55)" stroke-width=".7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12a4 4 0 0 1 4 4v2a3 3 0 0 1-5.4 1.8L15 14H9l-1.6 1.8A3 3 0 0 1 2 14v-2a4 4 0 0 1 4-4z"></path><path d="M7 10.5v3M5.5 12h3"></path><circle cx="16" cy="11" r=".5"></circle><circle cx="17.5" cy="12.5" r=".5"></circle></svg>
+    <h1 style="margin: 0; font: 800 60px/1.05 Manrope, sans-serif; letter-spacing: -1.6px; color: #fff">No games yet</h1>
+    <p style="margin: 0; max-width: 820px; font: 500 24px/1.45 Manrope, sans-serif; color: var(--text-secondary)">Games are compiled in the desktop launcher, from your own game files. Each one shows up here as soon as it is ready to play.</p>
+    <div style="display: flex; gap: 18px; margin-top: 20px">
+      <span class="bp-play bp-focus"><span class="bp-g">A</span>Compile on the desktop</span>
+      <span class="bp-btn">What do I need?</span>
+    </div>
+  </section>
+
+  <section style="position: absolute; left: 50%; top: 720px; width: 1240px; transform: translateX(-50%); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; z-index: 1">
+    <div class="bp-group" style="padding: 22px 26px; display: flex; flex-direction: column; gap: 10px">
+      <span class="bp-label">1 · Your files</span>
+      <span style="font: 500 20px/1.4 Manrope, sans-serif">The game you own, and the keys from your console</span>
+    </div>
+    <div class="bp-group" style="padding: 22px 26px; display: flex; flex-direction: column; gap: 10px">
+      <span class="bp-label">2 · Compile</span>
+      <span style="font: 500 20px/1.4 Manrope, sans-serif">On the desktop, with the keyboard and mouse. It takes a few minutes</span>
+    </div>
+    <div class="bp-group" style="padding: 22px 26px; display: flex; flex-direction: column; gap: 10px">
+      <span class="bp-label">3 · Play</span>
+      <span style="font: 500 20px/1.4 Manrope, sans-serif">Come back here: it is on Home, ready for the controller</span>
+    </div>
+  </section>
+
+  <footer class="bp-hints">
+    <span class="bp-hint"><span class="bp-g bp-g--icon" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"></path></svg></span>Menu</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-hint"><span class="bp-g bp-g--a">A</span>Compile on the desktop</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

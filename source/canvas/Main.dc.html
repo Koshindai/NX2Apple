@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Console mode Home</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/nx2apple-launcher/components/bundle.css">
+<link rel="stylesheet" href="bp.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="bp" style="font-family: Manrope, system-ui, sans-serif">
+  <div class="bp-backdrop" data-label="[Hero artwork of the focused game]" style="--art: linear-gradient(125deg,#1f3a4d 0%,#3d6b5a 45%,#e0b660 100%)"></div>
+
+  <header class="bp-top">
+    <span class="bp-word">Home</span>
+    <span class="bp-icon" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M16 16l4 4M11 17a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"></path></svg></span>
+    <span class="bp-spacer"></span>
+    <span class="bp-pad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12a4 4 0 0 1 4 4v2a3 3 0 0 1-5.4 1.8L15 14H9l-1.6 1.8A3 3 0 0 1 2 14v-2a4 4 0 0 1 4-4z"></path><path d="M7 10.5v3M5.5 12h3"></path></svg><span class="bp-pad__p">P1</span><span class="bp-pad__batt">78%</span></span>
+    <span class="bp-pad bp-pad--low"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12a4 4 0 0 1 4 4v2a3 3 0 0 1-5.4 1.8L15 14H9l-1.6 1.8A3 3 0 0 1 2 14v-2a4 4 0 0 1 4-4z"></path><path d="M7 10.5v3M5.5 12h3"></path></svg><span class="bp-pad__p">P2</span><span class="bp-pad__batt">12%</span></span>
+    <span class="bp-clock">21:42</span>
+  </header>
+
+  <section style="position: absolute; left: 96px; top: 156px; width: 1100px; display: flex; flex-direction: column; gap: 22px; z-index: 1">
+    <span class="bp-eyebrow">Ready on Mac</span>
+    <h1 class="bp-title">[Game title]</h1>
+    <div class="bp-meta"><span>Last played <b>yesterday</b></span><span><b>14 h</b> played</span><span>Version <b>1.2.0</b></span></div>
+  </section>
+
+  <section style="position: absolute; left: 96px; right: 0; top: 862px; display: flex; flex-direction: column; gap: 26px; z-index: 1; opacity: .55">
+    <h2 class="bp-shelf-title">Ready to play <small>14 games</small></h2>
+    <div style="display: flex; gap: 32px; align-items: flex-start">
+      <div class="bp-tile" data-label="[Game G]" style="--w: 420px; --art: linear-gradient(135deg,#3b2a5c 0%,#b4553c 55%,#f0b45a 100%)"></div>
+      <div class="bp-tile" data-label="[Game I]" style="--w: 420px; --art: linear-gradient(140deg,#1d2b1f,#3f6a3a 55%,#b8d68a)"></div>
+      <div class="bp-tile" data-label="[Game K]" style="--w: 420px; --art: linear-gradient(150deg,#14202e,#2e4a6b 55%,#c0d4e8)"></div>
+      <div class="bp-tile" data-label="[Game L]" style="--w: 420px; --art: linear-gradient(130deg,#30182a,#6a2f4f 55%,#d88aa8)"></div>
+      <div class="bp-tile" data-label="[Game M]" style="--w: 420px; --art: linear-gradient(120deg,#1b2a1b,#4f6b2f 55%,#d8e08a)"></div>
+    </div>
+  </section>
+
+  <section style="position: absolute; left: 96px; right: 0; top: 440px; display: flex; flex-direction: column; gap: 26px; z-index: 1">
+    <h2 class="bp-shelf-title">Continue playing <small>6 games</small></h2>
+    <div style="display: flex; gap: 32px; align-items: flex-start">
+      <div style="display: flex; flex-direction: column">
+        <div class="bp-tile is-focus" data-label="[Game title]" style="--w: 420px; --art: linear-gradient(125deg,#1f3a4d 0%,#3d6b5a 45%,#e0b660 100%); --glow: #e0b660"></div>
+        <div class="bp-cap"><span class="bp-cap__name">[Game title]</span><span class="bp-cap__sub">Yesterday</span></div>
+      </div>
+      <div style="display: flex; flex-direction: column">
+        <div class="bp-tile" data-label="[Game B]" style="--w: 420px; --art: linear-gradient(140deg,#4a1f2c,#a8452f 60%,#f2a65a)"></div>
+        <div class="bp-cap"><span class="bp-cap__name">[Game B]</span><span class="bp-cap__sub">3 days ago</span></div>
+      </div>
+      <div style="display: flex; flex-direction: column">
+        <div class="bp-tile" data-label="[Game C]" style="--w: 420px; --art: linear-gradient(160deg,#16243f,#2f5f8f 55%,#9fd0e0)">
+          <span class="bp-tile__badge" style="--dot: #ffc73d">Building 62%</span>
+          <span class="bp-tile__progress" style="--p: 62%"><i></i></span>
+        </div>
+        <div class="bp-cap"><span class="bp-cap__name">[Game C]</span><span class="bp-cap__sub">Update 1.1 is compiling</span></div>
+      </div>
+      <div style="display: flex; flex-direction: column">
+        <div class="bp-tile" data-label="[Game D]" style="--w: 420px; --art: linear-gradient(130deg,#2a2a1e,#6b7a3a 55%,#d8d08a)"></div>
+        <div class="bp-cap"><span class="bp-cap__name">[Game D]</span><span class="bp-cap__sub">Last week</span></div>
+      </div>
+      <div style="display: flex; flex-direction: column">
+        <div class="bp-tile" data-label="[Game E]" style="--w: 420px; --art: linear-gradient(150deg,#3a1d3f,#7a3e5c 50%,#e8a0a0)"></div>
+        <div class="bp-cap"><span class="bp-cap__name">[Game E]</span><span class="bp-cap__sub">Last month</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div style="position: absolute; right: 40px; top: 470px; display: flex; flex-direction: column; gap: 10px; z-index: 1" aria-hidden="true">
+    <i style="width: 6px; height: 28px; border-radius: 3px; background: #fff0d6"></i>
+    <i style="width: 6px; height: 14px; border-radius: 3px; background: rgba(255,255,255,.3)"></i>
+    <i style="width: 6px; height: 14px; border-radius: 3px; background: rgba(255,255,255,.3)"></i>
+  </div>
+
+  <footer class="bp-hints">
+    <span class="bp-hint"><span class="bp-g bp-g--icon" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"></path></svg></span>Menu</span>
+    <span class="bp-hint"><span class="bp-g bp-g--icon" aria-label="View"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5h10v9H9zM5 9v10h10"></path></svg></span>Quick menu</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-hint"><span class="bp-g">Y</span>Search</span>
+    <span class="bp-hint"><span class="bp-g">X</span>Play</span>
+    <span class="bp-hint"><span class="bp-g bp-g--a">A</span>Game page</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

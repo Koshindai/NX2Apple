@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Console mode launch options</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/nx2apple-launcher/components/bundle.css">
+<link rel="stylesheet" href="bp.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap">
+<style>
+body{margin:0}
+.radio{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.35);box-sizing:border-box;flex:none}
+.radio.on{border:8px solid #fff0d6}
+.val{display:inline-flex;align-items:center;gap:18px;min-width:300px;justify-content:space-between;font:700 23px/1 Manrope,sans-serif;color:#fff0d6}
+.val i{font-style:normal;color:rgba(255,240,214,.55);font-size:20px}
+.note{font:500 18px/1.35 Manrope,sans-serif;color:rgba(235,235,245,.6)}
+.dot{width:10px;height:10px;border-radius:50%;background:#fff0d6;flex:none}
+.cat{display:flex;align-items:center;gap:16px;height:64px;padding:0 22px;border-radius:14px;font:600 23px/1 Manrope,sans-serif;color:rgba(255,255,255,.75);position:relative}
+.cat small{margin-left:auto;font:500 18px/1 Manrope,sans-serif;color:rgba(235,235,245,.6)}
+.cat.on{background:rgba(255,255,255,.1);color:#fff;font-weight:800}
+.cat.on::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:4px;border-radius:4px;background:#fff0d6}
+.dlg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);box-sizing:border-box;padding:44px 48px;border-radius:24px;background:rgba(26,26,28,.98);border:1px solid rgba(255,255,255,.12);box-shadow:0 24px 60px rgba(0,0,0,.55);z-index:3;display:flex;flex-direction:column;gap:18px}
+.dlg h2{margin:0;font:800 40px/1.1 Manrope,sans-serif;letter-spacing:-.8px;color:#fff}
+.dlg p{margin:0;font:500 21px/1.45 Manrope,sans-serif;color:rgba(235,235,245,.7)}
+.danger{background:rgba(255,107,102,.14);border-color:rgba(255,107,102,.45);color:#ff6b66}
+.callout{display:flex;gap:18px;align-items:flex-start;padding:22px 26px;border-radius:14px;background:rgba(255,199,61,.08);border:1px solid rgba(255,199,61,.35)}
+</style>
+</helmet>
+<div class="bp" style="font-family: Manrope, system-ui, sans-serif">
+  <div class="bp-backdrop" style="--art: linear-gradient(140deg,#4a1f2c,#a8452f 60%,#f2a65a); opacity: .3"></div>
+  <header class="bp-top">
+    <span class="bp-hint" style="color: var(--text-secondary)"><span class="bp-g">B</span>[Game B]</span>
+    <span class="bp-word" style="margin-left: 18px">Launch options</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-pad"><span class="bp-pad__p">P1</span><span class="bp-pad__batt">78%</span></span>
+    <span class="bp-clock">21:42</span>
+  </header>
+
+  <nav style="position: absolute; left: 72px; top: 136px; width: 420px; display: flex; flex-direction: column; gap: 6px; z-index: 1" aria-label="Sections">
+    <span class="cat on">Basic<small>7</small></span>
+    <span class="cat">Advanced<small>14</small></span>
+    <span class="cat">Mods<small>2 on</small></span>
+    <div style="height: 1px; background: rgba(255,255,255,.1); margin: 18px 22px"></div>
+    <span class="note" style="padding: 0 22px">2 changed from the tested defaults. A change counts from the game's next start.</span>
+    <span class="bp-btn" style="margin: 22px 0 0 22px; align-self: flex-start">Reset to tested defaults</span>
+  </nav>
+
+  <section class="bp-group" style="position: absolute; left: 540px; right: 96px; top: 136px; padding: 12px; display: flex; flex-direction: column; gap: 4px; z-index: 1; background: rgba(20,20,22,.9)" aria-label="Basic settings">
+    <div class="bp-row" style="height: 84px">Display mode<span class="bp-spacer"></span><span class="val"><i>◀</i>Full screen<i>▶</i></span></div>
+    <div class="bp-row is-focus" style="height: auto; padding: 18px 22px; flex-wrap: wrap; row-gap: 10px"><span class="dot" aria-label="Changed"></span>Render scale<span class="bp-spacer"></span><span class="val"><i>◀</i>150%<i>▶</i></span><span class="note" style="flex-basis: 100%; padding-left: 30px">Draws the game at 1.5 times its size, then fits it to the screen. Sharper, and harder on the Mac.</span></div>
+    <div class="bp-row" style="height: 84px"><span class="dot" aria-label="Changed"></span>Frame rate<span class="bp-spacer"></span><span class="val"><i>◀</i>60 fps<i>▶</i></span></div>
+    <div class="bp-row" style="height: 84px">Picture<span class="bp-spacer"></span><span class="val"><i>◀</i>Fit to screen<i>▶</i></span></div>
+    <div class="bp-row" style="height: 84px">Console mode<span class="bp-spacer"></span><span class="val"><i>◀</i>Docked<i>▶</i></span></div>
+    <div class="bp-row" style="height: 84px">Game language<span class="bp-spacer"></span><span class="val"><i>◀</i>English<i>▶</i></span></div>
+    <div class="bp-row" style="height: auto; padding: 18px 22px; flex-wrap: wrap; row-gap: 8px; opacity: .45">Dynamic resolution<span class="bp-spacer"></span><span class="val"><i>◀</i>Off<i>▶</i></span><span class="note" style="flex-basis: 100%">Only with Render scale at 100%</span></div>
+  </section>
+
+  <footer class="bp-hints">
+    <span class="bp-hint"><span class="bp-g bp-g--icon" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"></path></svg></span>Menu</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-hint"><span class="bp-g">Y</span>Back to default</span>
+    <span class="bp-hint"><span class="bp-g">X</span>Play</span>
+    <span class="bp-hint"><span class="bp-g">B</span>Back</span>
+    <span class="bp-hint"><span class="bp-g bp-g--icon" aria-label="D-pad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 4h5v5.5H20v5h-5.5V20h-5v-5.5H4v-5h5.5z"></path></svg></span>Change</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

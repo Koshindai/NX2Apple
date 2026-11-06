@@ -1,0 +1,363 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-06T12:00:00Z"
+  },
+  "title": "NX2Apple Console mode",
+  "launch": {
+    "view": "canvas",
+    "page": "phase1"
+  },
+  "pages": [
+    {
+      "id": "phase1",
+      "name": "Phase 1 · Console mode"
+    },
+    {
+      "id": "phase2",
+      "name": "Phase 2 · In-game menu"
+    }
+  ],
+  "boards": {
+    "Main.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1920,
+      "h": 1080,
+      "title": "Home",
+      "page": "phase1"
+    },
+    "Library.dc.html": {
+      "x": 2000,
+      "y": 0,
+      "w": 1920,
+      "h": 1080,
+      "title": "Library",
+      "page": "phase1"
+    },
+    "Game.dc.html": {
+      "x": 4000,
+      "y": 0,
+      "w": 1920,
+      "h": 1080,
+      "title": "Game page",
+      "page": "phase1"
+    },
+    "MainMenu.dc.html": {
+      "x": 0,
+      "y": 1500,
+      "w": 1920,
+      "h": 1080,
+      "title": "Main menu (+ button)",
+      "page": "phase1"
+    },
+    "QuickMenu.dc.html": {
+      "x": 2000,
+      "y": 1500,
+      "w": 1920,
+      "h": 1080,
+      "title": "Quick menu (Select button)",
+      "page": "phase1"
+    },
+    "Starting.dc.html": {
+      "x": 4000,
+      "y": 1500,
+      "w": 1920,
+      "h": 1080,
+      "title": "Starting a game",
+      "page": "phase1"
+    },
+    "Prototype.dc.html": {
+      "x": 0,
+      "y": 3000,
+      "w": 1920,
+      "h": 1080,
+      "title": "Prototype: play the phase 1 flow",
+      "page": "phase1",
+      "is_interactive": true
+    },
+    "EmptyLibrary.dc.html": {
+      "x": 0,
+      "y": 4900,
+      "w": 1920,
+      "h": 1080,
+      "title": "Empty library",
+      "page": "phase1"
+    },
+    "CompileFailed.dc.html": {
+      "x": 2000,
+      "y": 4900,
+      "w": 1920,
+      "h": 1080,
+      "title": "Game page: compile failed",
+      "page": "phase1"
+    },
+    "NoController.dc.html": {
+      "x": 4000,
+      "y": 4900,
+      "w": 1920,
+      "h": 1080,
+      "title": "No controller, and one disconnects",
+      "page": "phase1"
+    },
+    "InGame.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1920,
+      "h": 1080,
+      "title": "Game menu over the game (Home button)",
+      "page": "phase2"
+    },
+    "Search.dc.html": {
+      "x": 0,
+      "y": 6500,
+      "w": 1920,
+      "h": 1080,
+      "title": "Search, with the on-screen keyboard",
+      "page": "phase1"
+    },
+    "Builds.dc.html": {
+      "x": 2000,
+      "y": 6500,
+      "w": 1920,
+      "h": 1080,
+      "title": "Builds",
+      "page": "phase1"
+    },
+    "LibraryOptions.dc.html": {
+      "x": 4000,
+      "y": 6500,
+      "w": 1920,
+      "h": 1080,
+      "title": "Library options (Y)",
+      "page": "phase1"
+    },
+    "Controls.dc.html": {
+      "x": 6000,
+      "y": 6500,
+      "w": 1920,
+      "h": 1080,
+      "title": "A game's Controls",
+      "page": "phase1"
+    },
+    "LaunchOptions.dc.html": {
+      "x": 0,
+      "y": 8100,
+      "w": 1920,
+      "h": 1080,
+      "title": "Launch options (sliders icon)",
+      "page": "phase1"
+    },
+    "Manage.dc.html": {
+      "x": 2000,
+      "y": 8100,
+      "w": 1920,
+      "h": 1080,
+      "title": "Manage menu (… button)",
+      "page": "phase1"
+    },
+    "Confirm.dc.html": {
+      "x": 4000,
+      "y": 8100,
+      "w": 1920,
+      "h": 1080,
+      "title": "Confirmation: delete a game",
+      "page": "phase1"
+    },
+    "Saves.dc.html": {
+      "x": 6000,
+      "y": 8100,
+      "w": 1920,
+      "h": 1080,
+      "title": "Game page: Saves tab",
+      "page": "phase1"
+    },
+    "Cheats.dc.html": {
+      "x": 8000,
+      "y": 8100,
+      "w": 1920,
+      "h": 1080,
+      "title": "Game page: Cheats tab",
+      "page": "phase1"
+    },
+    "Settings.dc.html": {
+      "x": 0,
+      "y": 9900,
+      "w": 1920,
+      "h": 1080,
+      "title": "Settings (main menu)",
+      "page": "phase1"
+    },
+    "Crashed.dc.html": {
+      "x": 2000,
+      "y": 9900,
+      "w": 1920,
+      "h": 1080,
+      "title": "Back after the game stopped",
+      "page": "phase1"
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Library.dc.html",
+    "Game.dc.html",
+    "MainMenu.dc.html",
+    "QuickMenu.dc.html",
+    "Starting.dc.html",
+    "Prototype.dc.html",
+    "EmptyLibrary.dc.html",
+    "CompileFailed.dc.html",
+    "NoController.dc.html",
+    "Search.dc.html",
+    "Builds.dc.html",
+    "LibraryOptions.dc.html",
+    "Controls.dc.html",
+    "LaunchOptions.dc.html",
+    "Manage.dc.html",
+    "Confirm.dc.html",
+    "Saves.dc.html",
+    "Cheats.dc.html",
+    "Settings.dc.html",
+    "Crashed.dc.html",
+    "InGame.dc.html"
+  ],
+  "notes": {
+    "t1": {
+      "x": 0,
+      "y": -300,
+      "text": "Phase 1 · Browse: Home, Library, Game page",
+      "kind": "title1",
+      "maxW": 5920,
+      "page": "phase1"
+    },
+    "t2": {
+      "x": 0,
+      "y": 1200,
+      "text": "Phase 1 · Menus and starting a game",
+      "kind": "title1",
+      "maxW": 5920,
+      "page": "phase1"
+    },
+    "t3": {
+      "x": 0,
+      "y": 2700,
+      "text": "Phase 1 · Try the flow",
+      "kind": "title1",
+      "maxW": 1920,
+      "page": "phase1"
+    },
+    "s1": {
+      "x": 2080,
+      "y": 3000,
+      "w": 560,
+      "text": "Phase 1 is the launcher only (frontend/, SwiftUI). It ends where the game window opens and starts again when the game quits. In a game, the Home button keeps today's behavior: hold 2 s, then A to quit.",
+      "fill": "teal",
+      "size": "l",
+      "page": "phase1"
+    },
+    "s3": {
+      "x": 2080,
+      "y": 3800,
+      "w": 560,
+      "text": "Navigation rules\n• A opens, X plays now, B goes back. B on Home does nothing.\n• Y: Search on Home, Sort in the Library.\n• + main menu, Select quick menu, from anywhere.\n• L / R switch tabs inside a screen only (Library filters, game page, quick menu), and keep working while Search has the focus. Sections come from the main menu, as in Steam.\n• The top bar names the screen. Up from the first row reaches Search there, as in Steam.\n• Something always has the focus, and screens remember it.\n• No wrap-around: the focus nudges at an edge.\n• The hint bar shows only what works here, in the glyphs of the controller used last, or as key caps after the keyboard.",
+      "fill": "gray",
+      "size": "m",
+      "page": "phase1"
+    },
+    "t5": {
+      "x": 0,
+      "y": 4600,
+      "text": "Phase 1 · When things are not ready",
+      "kind": "title1",
+      "maxW": 5920,
+      "page": "phase1"
+    },
+    "t4": {
+      "x": 0,
+      "y": -300,
+      "text": "Phase 2 · Game menu (engine)",
+      "kind": "title1",
+      "maxW": 1920,
+      "page": "phase2"
+    },
+    "s2": {
+      "x": 2080,
+      "y": 0,
+      "w": 560,
+      "text": "Later, in the engine (front_mac.m, a patch plus a PR to seedds/nxnative). A short press on Home opens this menu over the game, built on the existing hold-to-quit prompt. First cut: Resume and Quit. Then the frame rate overlay, then controllers.",
+      "fill": "orange",
+      "size": "l",
+      "page": "phase2"
+    },
+    "s4": {
+      "x": 2700,
+      "y": 3000,
+      "w": 480,
+      "text": "Play it with a controller: open Play, press any button once (Chrome or Safari).\n\nOr the keyboard: click the screen, then\n← ↑ → ↓ move · return A · ⌫ (or B) B\n(Esc leaves the canvas player)\nX, Y · Q / E for L / R\nM main menu · V quick menu\nH Home (quits a running game)\n\nNintendo pad: set Tweaks › family to nintendo so A is the right button.",
+      "fill": "teal",
+      "size": "m",
+      "page": "phase1"
+    },
+    "t6": {
+      "x": 0,
+      "y": 6200,
+      "text": "Phase 1 · Search, Builds, options and controls",
+      "kind": "title1",
+      "maxW": 7920,
+      "page": "phase1"
+    },
+    "t7": {
+      "x": 0,
+      "y": 7800,
+      "text": "Phase 1 · A game's options, saves, cheats and management",
+      "kind": "title1",
+      "maxW": 9920,
+      "page": "phase1"
+    },
+    "t8": {
+      "x": 0,
+      "y": 9600,
+      "text": "Phase 1 · Settings and recovery",
+      "kind": "title1",
+      "maxW": 3920,
+      "page": "phase1"
+    },
+    "s5": {
+      "x": 4000,
+      "y": 9900,
+      "w": 620,
+      "text": "Confirmation pattern\n• Only for what loses something: Delete game, Remove from collection, Stop a build.\n• The safe button has the focus when it opens, and B cancels.\n• The dangerous button is red and never the default, so a double A press does nothing harmful.\n• The text says what goes and what stays.\n\nDesktop-only actions (Show in Finder, Show log, importing cheats, choosing the saves folder) say \"On the desktop\" and leave console mode when chosen.",
+      "fill": "gray",
+      "size": "m",
+      "page": "phase1"
+    },
+    "s6": {
+      "x": 3240,
+      "y": 3000,
+      "w": 640,
+      "fill": "gray",
+      "size": "m",
+      "page": "phase1",
+      "text": "Focus, motion and glyphs (for development)\n\nFocus\n• Tiles: a 3 px cream contour on the artwork, a 3% lift and a glow in the artwork's colour. No ring around the tile.\n• Rows: the row lights up, with a 3 px cream outline on its edge.\n• Buttons fill with cream and their text turns black. A dangerous button (Delete) fills red. Play stays grey until it has the focus.\n• On-screen keyboard: the outline sits 2 px off the key.\n• A menu over a screen hides that screen's focus, never its own.\n\nMotion\n• Screens fade in (0.26 s) and slide 28 px (0.32 s, ease-out): from the right going in, from the left with B.\n• Side menus slide 60 px from their edge (0.28 s) over a dim that fades in (0.22 s). Dialogs settle from 97% (0.26 s).\n• Switches: the knob slides in 0.26 s with a slight overshoot.\n• At an edge the focus nudges 6 px (3 px for rows) and comes back. No wrap-around.\n\nGlyphs\n• Hints use the last controller's glyphs: Xbox letters, PlayStation shapes, Nintendo letters with A on the right. Menu, View, Options and Create are icons. After the keyboard, key caps.\n• Home is named after the controller: the Xbox button, the PS button, the Home button.\n• The boards show an Xbox controller. The prototype follows the one chosen.\n• No text under 18 px."
+    },
+    "s7": {
+      "x": 3940,
+      "y": 3000,
+      "w": 640,
+      "fill": "orange",
+      "size": "m",
+      "page": "phase1",
+      "text": "Data the Mac launcher does not have yet\n\n• Last played and play time per game: used by Home's Continue playing row, the game page's Last played and Play time, and the Library's Recently played sort. The Mac launcher records no sessions today. The iPhone shell keeps a last played date (shell.lastPlayed), so the idea exists, not the data on the Mac.\n• Already there: the cloud saves state and the date of the last session (the cloud save log), launch options, cheats, controller layouts, builds."
+    }
+  },
+  "designSystems": [
+    {
+      "title": "NX2Apple Launcher",
+      "namespace": "nx2apple-launcher",
+      "artifact": "https://claude.ai/artifact/Mai5zYn2EBahNfmmtvw5kL",
+      "version": "1793956009-a426",
+      "copiedAt": "2026-11-06T12:00:00Z"
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Console mode cheats</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/nx2apple-launcher/components/bundle.css">
+<link rel="stylesheet" href="bp.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap">
+<style>
+body{margin:0}
+.radio{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.35);box-sizing:border-box;flex:none}
+.radio.on{border:8px solid #fff0d6}
+.val{display:inline-flex;align-items:center;gap:18px;min-width:300px;justify-content:space-between;font:700 23px/1 Manrope,sans-serif;color:#fff0d6}
+.val i{font-style:normal;color:rgba(255,240,214,.55);font-size:20px}
+.note{font:500 18px/1.35 Manrope,sans-serif;color:rgba(235,235,245,.6)}
+.dot{width:10px;height:10px;border-radius:50%;background:#fff0d6;flex:none}
+.cat{display:flex;align-items:center;gap:16px;height:64px;padding:0 22px;border-radius:14px;font:600 23px/1 Manrope,sans-serif;color:rgba(255,255,255,.75);position:relative}
+.cat small{margin-left:auto;font:500 18px/1 Manrope,sans-serif;color:rgba(235,235,245,.6)}
+.cat.on{background:rgba(255,255,255,.1);color:#fff;font-weight:800}
+.cat.on::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:4px;border-radius:4px;background:#fff0d6}
+.dlg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);box-sizing:border-box;padding:44px 48px;border-radius:24px;background:rgba(26,26,28,.98);border:1px solid rgba(255,255,255,.12);box-shadow:0 24px 60px rgba(0,0,0,.55);z-index:3;display:flex;flex-direction:column;gap:18px}
+.dlg h2{margin:0;font:800 40px/1.1 Manrope,sans-serif;letter-spacing:-.8px;color:#fff}
+.dlg p{margin:0;font:500 21px/1.45 Manrope,sans-serif;color:rgba(235,235,245,.7)}
+.danger{background:rgba(255,107,102,.14);border-color:rgba(255,107,102,.45);color:#ff6b66}
+.callout{display:flex;gap:18px;align-items:flex-start;padding:22px 26px;border-radius:14px;background:rgba(255,199,61,.08);border:1px solid rgba(255,199,61,.35)}
+</style>
+</helmet>
+<div class="bp" style="font-family: Manrope, system-ui, sans-serif">
+  <div class="bp-backdrop" style="--art: linear-gradient(140deg,#4a1f2c,#a8452f 60%,#f2a65a)"></div>
+  <header class="bp-top">
+    <span class="bp-hint" style="color: var(--text-secondary)"><span class="bp-g">B</span>Library</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-pad"><span class="bp-pad__p">P1</span><span class="bp-pad__batt">78%</span></span>
+    <span class="bp-clock">21:42</span>
+  </header>
+  <section style="position: absolute; left: 96px; top: 150px; display: flex; flex-direction: column; gap: 16px; z-index: 1">
+    <span class="bp-eyebrow">Ready on Mac and iPhone</span>
+    <h1 class="bp-title" style="font-size: 64px">[Game B]</h1>
+  </section>
+  <section style="position: absolute; left: 96px; right: 96px; top: 320px; display: flex; align-items: center; gap: 44px; z-index: 1">
+    <span class="bp-play" style="min-width: 220px; justify-content: center">Play</span>
+    <div style="display: flex; flex-direction: column; gap: 8px"><span class="bp-label">Last played</span><span style="font: 700 24px/1.1 Manrope, sans-serif; color: #fff">Yesterday</span></div>
+    <div style="display: flex; flex-direction: column; gap: 8px"><span class="bp-label">Play time</span><span style="font: 700 24px/1.1 Manrope, sans-serif; color: #fff">14 h 20 min</span></div>
+  </section>
+  <nav class="bp-nav" style="position: absolute; left: 0; right: 0; top: 440px; justify-content: center; z-index: 1"><span class="bp-g bp-g--sm">LB</span><span class="bp-tab">Overview</span><span class="bp-tab">Saves</span><span class="bp-tab">Build</span><span class="bp-tab" aria-selected="true">Cheats</span><span class="bp-g bp-g--sm">RB</span></nav>
+  <section style="position: absolute; left: 96px; right: 96px; top: 530px; display: grid; grid-template-columns: 1.4fr 1fr; gap: 28px; z-index: 1">
+    <div class="bp-group" style="padding: 12px; display: flex; flex-direction: column; gap: 2px">
+      <div class="bp-row" style="height: 76px; font-weight: 800">Run cheats in the game<span class="bp-spacer"></span><span class="bp-switch" aria-checked="true"></span></div>
+      <div class="bp-sep" style="margin: 4px 22px"></div>
+      <div class="bp-row is-focus" style="height: 70px">Infinite health<span class="bp-spacer"></span><span class="bp-switch" aria-checked="true"></span></div>
+      <div class="bp-row" style="height: 70px">Max money<span class="bp-spacer"></span><span class="bp-switch" aria-checked="true"></span></div>
+      <div class="bp-row" style="height: 70px">Moon jump<span class="bp-row__end" style="margin-right: 20px">Runs once, used from the game window</span><span class="bp-switch" aria-checked="false" style="margin-left: 0"></span></div>
+      <div class="bp-row" style="height: 70px; opacity: .5">Unlock all outfits<span class="bp-row__end" style="color: #ff6b66">Malformed, will not run</span></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 18px">
+      <div class="bp-group" style="padding: 24px 28px; display: flex; flex-direction: column; gap: 10px">
+        <span class="bp-label">This build</span>
+        <span style="font: 600 22px/1.2 Manrope, sans-serif; color: #fff; font-variant-numeric: tabular-nums">4F8A1C93E2B7D051</span>
+        <span class="note">Switches are saved at once and apply the next time the game starts.</span>
+      </div>
+      <span class="note" style="padding: 0 8px">Cheats are imported on the desktop. Cheats that change the game's code only work in the Mac app.</span>
+    </div>
+  </section>
+  <footer class="bp-hints">
+    <span class="bp-hint"><span class="bp-g bp-g--icon" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"></path></svg></span>Menu</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-hint"><span class="bp-g">X</span>Play</span>
+    <span class="bp-hint"><span class="bp-g">B</span>Back</span>
+    <span class="bp-hint"><span class="bp-g bp-g--a">A</span>Switch</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

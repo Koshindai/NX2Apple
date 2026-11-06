@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Console mode compile stopped</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/nx2apple-launcher/components/bundle.css">
+<link rel="stylesheet" href="bp.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="bp" style="font-family: Manrope, system-ui, sans-serif">
+  <div class="bp-backdrop" data-label="[Hero artwork, desaturated]" style="--art: linear-gradient(120deg,#102a2a,#1f6b66 55%,#7fd6b8); filter: saturate(.35) brightness(.75)"></div>
+
+  <header class="bp-top">
+    <span class="bp-hint" style="color: var(--text-secondary)"><span class="bp-g">B</span>Library</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-pad"><span class="bp-pad__p">P1</span><span class="bp-pad__batt">78%</span></span>
+    <span class="bp-clock">21:42</span>
+  </header>
+
+  <section style="position: absolute; left: 96px; top: 210px; width: 1500px; display: flex; flex-direction: column; gap: 20px; z-index: 1">
+    <span class="bp-eyebrow bp-eyebrow--building">Compile stopped</span>
+    <h1 class="bp-title">[Game F]</h1>
+  </section>
+
+  <section style="position: absolute; left: 96px; right: 96px; top: 440px; display: flex; align-items: center; gap: 44px; z-index: 1">
+    <span class="bp-play bp-focus" style="min-width: 220px; justify-content: center">Try again</span>
+    <div style="display: flex; flex-direction: column; gap: 8px"><span class="bp-label">Stopped at</span><span style="font: 700 24px/1.1 Manrope, sans-serif; color: #fff">Step 2 of 5</span></div>
+    <div style="display: flex; flex-direction: column; gap: 8px"><span class="bp-label">When</span><span style="font: 700 24px/1.1 Manrope, sans-serif; color: #fff">Yesterday, 18:04</span></div>
+    <span class="bp-spacer"></span>
+    <span class="bp-btn bp-btn--round" aria-label="Controls"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12a4 4 0 0 1 4 4v2a3 3 0 0 1-5.4 1.8L15 14H9l-1.6 1.8A3 3 0 0 1 2 14v-2a4 4 0 0 1 4-4zM7 10.5v3M5.5 12h3"></path></svg></span>
+    <span class="bp-btn bp-btn--round" aria-label="Launch options"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8M16 5v4M10 15v4"></path></svg></span>
+    <span class="bp-btn bp-btn--round" aria-label="Manage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01"></path></svg></span>
+  </section>
+
+  <nav class="bp-nav" aria-label="Game page tabs" style="position: absolute; left: 0; right: 0; top: 580px; justify-content: center; z-index: 1">
+    <span class="bp-g bp-g--sm">LB</span>
+    <span class="bp-tab">Overview</span>
+    <span class="bp-tab">Saves</span>
+    <span class="bp-tab" aria-selected="true">Build</span>
+    <span class="bp-tab">Cheats</span>
+    <span class="bp-g bp-g--sm">RB</span>
+  </nav>
+
+  <section class="bp-group" style="position: absolute; left: 96px; top: 680px; width: 1100px; padding: 28px 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; border-color: rgba(255,199,61,.35); z-index: 1">
+    <div style="display: flex; align-items: center; gap: 14px">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ffc73d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"></path><path d="M12 10v4M12 17v.5"></path></svg>
+      <span style="font: 700 26px/1.2 Manrope, sans-serif; color: #fff">The game data is incomplete</span>
+    </div>
+    <span style="font: 500 22px/1.45 Manrope, sans-serif; color: var(--text-secondary)">The update file does not match this version of the game. Add the update for version 1.2.0 on the desktop, then try again. Nothing was changed on your Mac.</span>
+  </section>
+  <section class="bp-group" style="position: absolute; left: 1228px; right: 96px; top: 680px; padding: 28px 32px; display: flex; flex-direction: column; gap: 10px; z-index: 1">
+    <span class="bp-label">Mac</span>
+    <span style="font: 600 24px/1.3 Manrope, sans-serif; color: #fff">Not compiled yet</span>
+    <span style="font: 500 19px/1.3 Manrope, sans-serif; color: var(--text-secondary)">This was its first compile on this Mac</span>
+  </section>
+
+  <footer class="bp-hints">
+    <span class="bp-hint"><span class="bp-g bp-g--icon" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"></path></svg></span>Menu</span>
+    <span class="bp-hint"><span class="bp-g bp-g--icon" aria-label="View"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5h10v9H9zM5 9v10h10"></path></svg></span>Quick menu</span>
+    <span class="bp-spacer"></span>
+    <span class="bp-hint"><span class="bp-g">B</span>Back</span>
+    <span class="bp-hint"><span class="bp-g bp-g--a">A</span>Try again</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
