@@ -1,0 +1,1482 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NX2Apple Console mode prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap">
+<style>
+/* NX2Apple Console mode: the launcher's tokens, sized for a TV at 1920x1080. */
+:root {
+  --bg: #0e0e0f; --surface: #1a1a1c; --surface-group: rgba(26, 26, 28, 0.75);
+  --cream: #fff0d6; --cream-line: rgba(255, 240, 214, 0.35); --on-cream: #000000;
+  --ready: #40d678; --building: #ffc73d; --unbuilt: #91949c; --danger: #ff6b66;
+  --text: rgba(255, 255, 255, 0.92); --text-strong: #ffffff; --text-secondary: rgba(235, 235, 245, 0.6);
+  --fill-1: rgba(255, 255, 255, 0.055); --fill-2: rgba(255, 255, 255, 0.07); --fill-hover: rgba(255, 255, 255, 0.08);
+  --fill-3: rgba(255, 255, 255, 0.10); --fill-pressed: rgba(255, 255, 255, 0.13); --fill-track: rgba(255, 255, 255, 0.14);
+  --line-1: rgba(255, 255, 255, 0.06); --line-2: rgba(255, 255, 255, 0.10); --line-3: rgba(255, 255, 255, 0.14);
+  --line-console: rgba(255, 255, 255, 0.12); --line-focus: rgba(255, 255, 255, 0.22);
+  --badge-bg: rgba(14, 14, 15, 0.93); --scrim: rgba(0, 0, 0, 0.6);
+  --font-sans: "Manrope", system-ui, -apple-system, sans-serif;
+  --radius-thumb: 5px; --radius-row: 8px; --radius-control: 9px; --radius-panel: 12px; --radius-group: 14px; --radius-console: 16px; --radius-pill: 999px;
+  --shadow-menu: 0 6px 18px rgba(0, 0, 0, 0.5); --shadow-sheet: 0 24px 60px rgba(0, 0, 0, 0.55);
+  --size-round: 48px; --size-play-min: 164px; --size-menu-width: 250px; --size-menu-row: 36px; --size-option-row: 52px;
+}
+
+.bp { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); color: var(--text);
+  font: 400 22px/1.35 var(--font-sans); -webkit-font-smoothing: antialiased; }
+.bp button { font-family: inherit; }
+
+/* Backdrop: the focused game's artwork, faded into bg */
+.bp-backdrop { position: absolute; inset: 0; background: var(--art); background-size: cover; background-position: center; }
+.bp-backdrop::after { content: ""; position: absolute; inset: 0;
+  background: linear-gradient(to bottom, rgba(14,14,15,0) 14%, rgba(14,14,15,.84) 42%, #0e0e0f 62%),
+              linear-gradient(90deg, rgba(14,14,15,.9) 0%, rgba(14,14,15,0) 58%); }
+.bp-backdrop[data-label]::before { content: attr(data-label); position: absolute; right: 72px; top: 120px; z-index: 1;
+  font: 600 14px/1 var(--font-sans); letter-spacing: .5px; color: rgba(255,255,255,.55); }
+.bp-dim { position: absolute; inset: 0; background: rgba(8, 8, 9, .62); }
+
+/* Top bar */
+.bp-top { position: absolute; left: 0; right: 0; top: 0; height: 104px; box-sizing: border-box; padding: 0 72px;
+  display: flex; align-items: center; gap: 28px; z-index: 2; }
+.bp-word { font: 700 28px/1 var(--font-sans); letter-spacing: -.8px; color: var(--text-strong); margin-right: 20px; }
+.bp-nav { display: flex; align-items: center; gap: 6px; }
+.bp-tab { border: 0; background: none; color: var(--text); font: 500 21px/1 var(--font-sans); padding: 14px 24px; border-radius: var(--radius-pill); }
+.bp-tab[aria-selected="true"] { background: var(--fill-3); color: var(--text-strong); font-weight: 800; }
+.bp-spacer { flex: 1 1 auto; }
+.bp-pad { display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 16px; border-radius: var(--radius-pill);
+  background: var(--fill-1); border: 1px solid var(--line-2); font: 600 18px/1 var(--font-sans); color: var(--text); }
+.bp-pad svg { width: 24px; height: 24px; }
+.bp-pad__p { color: var(--cream); font-weight: 800; }
+.bp-pad--low .bp-pad__batt { color: var(--building); }
+.bp-clock { font: 600 22px/1 var(--font-sans); color: var(--text-strong); font-variant-numeric: tabular-nums; margin-left: 8px; }
+
+/* Controller glyphs */
+.bp-g { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; padding: 0 8px; box-sizing: border-box;
+  border-radius: var(--radius-pill); background: rgba(255,255,255,.16); color: var(--text-strong); font: 800 15px/1 var(--font-sans); flex: none; }
+.bp-g--a { background: var(--cream); color: var(--on-cream); }
+.bp-g--sm { min-width: 28px; height: 28px; font-size: 12px; }
+.bp-g svg { width: 18px; height: 18px; }
+
+/* Hint bar */
+.bp-hints { position: absolute; left: 0; right: 0; bottom: 0; height: 84px; box-sizing: border-box; padding: 0 72px; z-index: 2;
+  display: flex; align-items: center; gap: 36px; background: rgba(14,14,15,.82); border-top: 1px solid var(--line-1); }
+.bp-hint { display: inline-flex; align-items: center; gap: 12px; font: 600 20px/1 var(--font-sans); color: var(--text); }
+
+/* Hero */
+.bp-eyebrow { display: inline-flex; align-items: center; gap: 10px; font: 700 18px/1.2 var(--font-sans); letter-spacing: 1.8px; text-transform: uppercase; color: var(--ready); }
+.bp-eyebrow::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+.bp-eyebrow--building { color: var(--building); }
+.bp-eyebrow--unbuilt { color: var(--unbuilt); }
+.bp-title { margin: 0; font: 800 80px/1.02 var(--font-sans); letter-spacing: -2px; color: var(--text-strong); text-shadow: 0 0 12px rgba(0,0,0,.25); }
+.bp-meta { display: flex; gap: 28px; font: 500 22px/1.3 var(--font-sans); color: var(--text-secondary); }
+.bp-meta b { color: var(--text); font-weight: 600; }
+
+/* Buttons */
+.bp-play { display: inline-flex; align-items: center; gap: 14px; height: 72px; padding: 0 40px 0 22px; border: 0; border-radius: var(--radius-pill);
+  background: var(--cream); color: var(--on-cream); font: 800 26px/1 var(--font-sans); }
+.bp-play .bp-g { background: rgba(0,0,0,.12); color: var(--on-cream); }
+.bp-btn { display: inline-flex; align-items: center; gap: 12px; height: 72px; padding: 0 30px; border-radius: var(--radius-pill);
+  background: rgba(255,255,255,.09); border: 1px solid var(--line-3); color: var(--text-strong); font: 700 22px/1 var(--font-sans); }
+.bp-btn svg { width: 26px; height: 26px; }
+.bp-btn--round { width: 72px; padding: 0; justify-content: center; }
+.bp-btn--round svg { width: 34px; height: 34px; }
+.bp-focus { outline: 3px solid var(--cream); outline-offset: 3px; }
+/* A focused button fills with cream, as the focused control does on Steam: no ring around it */
+.bp-btn.bp-focus, .bp-icon.bp-focus { background: var(--cream); border-color: var(--cream); color: var(--on-cream); outline: none; }
+.bp-btn.danger.bp-focus { background: var(--danger); border-color: var(--danger); color: #000000; }
+/* Play is cream only while it has the focus, so the eye goes to what A does */
+.bp-play:not(.bp-focus) { background: rgba(255,255,255,.12); color: var(--text-strong); }
+.bp-play.bp-focus { outline: none; box-shadow: 0 10px 34px -8px rgba(255, 240, 214, .55); }
+/* Round icon button of the top bar (Search) */
+.bp-icon { display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; box-sizing: border-box;
+  background: var(--fill-1); border: 1px solid var(--line-2); color: var(--text-strong); }
+.bp-icon svg { width: 24px; height: 24px; }
+
+/* Tiles */
+.bp-tile { position: relative; flex: none; width: var(--w, 400px); aspect-ratio: 1.8; border-radius: var(--radius-console); overflow: hidden;
+  background: var(--art, var(--surface)); background-size: cover; box-shadow: inset 0 0 0 1px var(--line-console); }
+.bp-tile[data-label]::after { content: attr(data-label); position: absolute; left: 16px; top: 14px; font: 600 13px/1 var(--font-sans); color: rgba(255,255,255,.7); letter-spacing: .4px; }
+/* Focus: the library card's selection, sized for a TV. A cream contour on the artwork itself, plus a slight lift. */
+.bp-tile.is-focus { transform: scale(1.03); transform-origin: center bottom; box-shadow: inset 0 0 0 3px var(--cream), 0 24px 64px -10px color-mix(in srgb, var(--glow, #000000) 65%, transparent); }
+.bp-tile__badge { position: absolute; left: 14px; bottom: 14px; display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: var(--radius-pill);
+  background: var(--badge-bg); font: 600 18px/1 var(--font-sans); color: var(--text); }
+.bp-tile__badge::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--dot, var(--ready)); }
+.bp-tile__progress { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: rgba(0,0,0,.5); }
+.bp-tile__progress > i { display: block; height: 100%; width: var(--p, 40%); background: var(--building); }
+.bp-cap { margin-top: 14px; display: flex; flex-direction: column; gap: 4px; }
+.bp-tile.is-focus + .bp-cap .bp-cap__name { color: var(--text-strong); }
+.bp-cap__name { font: 700 20px/1.2 var(--font-sans); color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bp-cap__sub { font: 500 18px/1.2 var(--font-sans); color: var(--text-secondary); }
+
+.bp-shelf-title { display: flex; align-items: baseline; gap: 18px; margin: 0; font: 800 30px/1.1 var(--font-sans); letter-spacing: -.6px; color: var(--text-strong); }
+.bp-shelf-title small { font: 500 18px/1 var(--font-sans); letter-spacing: 0; color: var(--text-secondary); }
+
+/* Filter chips */
+.bp-filter { display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 22px; border-radius: var(--radius-pill);
+  background: var(--fill-1); border: 1px solid var(--line-2); font: 600 19px/1 var(--font-sans); color: var(--text); }
+.bp-filter b { font-weight: 600; color: var(--text-secondary); }
+.bp-filter[aria-pressed="true"] { background: var(--cream); color: var(--on-cream); border-color: var(--cream); }
+.bp-filter[aria-pressed="true"] b { color: rgba(0,0,0,.55); }
+
+/* Side panels (menus) */
+.bp-panel { position: absolute; top: 0; bottom: 0; box-sizing: border-box; background: rgba(22,22,24,.97); z-index: 3; display: flex; flex-direction: column; }
+.bp-row { display: flex; align-items: center; gap: 20px; height: 68px; padding: 0 22px; border-radius: var(--radius-group); border: 0; background: none;
+  color: var(--text); font: 600 23px/1 var(--font-sans); text-align: left; width: 100%; box-sizing: border-box; }
+.bp-row svg { width: 28px; height: 28px; flex: none; color: var(--text-secondary); }
+.bp-row.is-focus { background: var(--fill-3); color: var(--text-strong); outline: 3px solid var(--cream); outline-offset: 0; }
+.bp-row.is-focus svg { color: var(--cream); }
+.bp-row--danger, .bp-row--danger svg { color: var(--danger); }
+.bp-row__end { margin-left: auto; font: 500 19px/1 var(--font-sans); color: var(--text-secondary); }
+.bp-sep { height: 1px; background: var(--line-2); margin: 10px 22px; }
+
+.bp-group { background: var(--surface-group); border: 1px solid var(--line-1); border-radius: var(--radius-group); }
+/* The knob slides with a small overshoot, and the track and knob colours cross-fade */
+.bp-switch { width: 60px; height: 36px; border-radius: var(--radius-pill); background: var(--fill-track); padding: 4px; box-sizing: border-box; display: inline-flex; flex: none;
+  transition: background-color .22s ease-out; }
+.bp-switch::after { content: ""; width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,.85); box-shadow: 0 1px 3px rgba(0,0,0,.35);
+  transition: transform .26s cubic-bezier(.3,1.35,.5,1), background-color .22s ease-out; }
+.bp-switch[aria-checked="true"] { background: var(--cream); }
+.bp-switch[aria-checked="true"]::after { background: var(--bg); transform: translateX(24px); }
+
+.bp-bar { height: 10px; border-radius: var(--radius-pill); background: rgba(255,255,255,.12); overflow: hidden; }
+.bp-bar > i { display: block; height: 100%; width: var(--p, 30%); background: var(--cream); border-radius: var(--radius-pill); }
+
+.bp-label { font: 700 18px/1.2 var(--font-sans); letter-spacing: 1.6px; text-transform: uppercase; color: var(--text-secondary); }
+
+/* Key caps: the hint glyphs while the keyboard is in use */
+.bp-g--key { border-radius: 7px; background: #ffffff; color: #000000; font-size: 13px; letter-spacing: .2px; }
+
+/* A card that takes the focus (game page tab content) */
+.bp-group { transition: outline-color .15s, translate .15s; }
+.bp-group.is-focus { outline: 3px solid var(--cream); outline-offset: 6px; background: rgba(255,255,255,.08); }
+.bp-chev { margin-left: auto; color: var(--text-secondary); font: 600 22px/1 var(--font-sans); }
+
+/* A glyph the controller prints as a symbol (Menu, View, the PlayStation shapes) */
+.bp-g--icon { width: 34px; padding: 0; }
+.bp-g--icon svg { width: 18px; height: 18px; }
+
+
+
+/* NX2Apple Launcher — components as CSS classes (nx-…), built on tokens.css.
+   Each rule names the SwiftUI view it copies. The launcher is dark only. */
+
+.nx-root { background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: 13px; -webkit-font-smoothing: antialiased; }
+.nx-root button { font-family: inherit; }
+.nx-root :focus-visible { outline: 2px solid var(--cream); outline-offset: 3px; }
+
+/* Primary: a cream capsule (hero Play, sheet Done, first build) */
+.nx-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; cursor: pointer;
+  background: var(--cream); color: var(--on-cream); border-radius: var(--radius-pill);
+  font: 700 13.5px/1.2 var(--font-sans); padding: 9px 22px; }
+.nx-btn-primary--hero { font-size: 18px; padding: 14px 30px; min-width: var(--size-play-min); }
+.nx-btn-primary--large { font-size: 16px; font-weight: 600; padding: 15px 24px; }
+.nx-btn-primary:disabled { opacity: .45; cursor: default; }
+
+/* Secondary: LauncherSecondaryButtonStyle */
+.nx-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; white-space: nowrap;
+  background: var(--fill-1); color: var(--text); border: 1px solid var(--line-2); border-radius: var(--radius-control);
+  font: 600 13px/1.2 var(--font-sans); padding: 9px 15px; }
+.nx-btn-secondary:active { background: var(--fill-pressed); }
+.nx-btn-secondary--building { color: var(--building); border-color: rgba(255, 199, 61, .75); }
+.nx-btn-secondary:disabled { opacity: .55; color: var(--unbuilt); cursor: default; }
+
+/* Round icon button: hero Launch options (48 pt) */
+.nx-btn-round { width: var(--size-round); height: var(--size-round); display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+  border-radius: 50%; background: var(--fill-3); border: 1px solid var(--line-3); color: var(--text-strong); }
+
+/* Manage button label: ellipsis.circle (27 pt, ultra light) and the word, no background */
+.nx-manage { display: inline-flex; align-items: center; gap: 9px; background: none; border: 0; color: var(--text-strong); font: 400 13px/1 var(--font-sans); cursor: pointer; padding: 0; }
+.nx-manage svg { width: 27px; height: 27px; }
+
+/* Chip: cream outline capsule (Recompiler, Signer à nouveau) */
+.nx-chip { display: inline-flex; align-items: center; gap: 6px; background: none; cursor: pointer;
+  border: 1px solid var(--cream-line); border-radius: var(--radius-pill); color: var(--cream);
+  font: 600 12px/1.2 var(--font-sans); padding: 4px 10px; }
+
+/* Top-bar tab: a bold label on a soft pill when chosen */
+.nx-tab { display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; cursor: pointer;
+  border-radius: var(--radius-control); padding: 10px 18px; color: var(--text); font: 500 15px/1.2 var(--font-sans); }
+.nx-tab[aria-selected="true"] { background: var(--fill-3); font-weight: 700; color: var(--text-strong); }
+
+/* Segmented: LauncherSegmented, the choice is a cream pill */
+.nx-segmented { display: inline-flex; gap: 2px; padding: 3px; border-radius: var(--radius-pill); background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .08); }
+.nx-segmented > button { flex: 1 1 0; border: 0; cursor: pointer; white-space: nowrap; background: none; border-radius: var(--radius-pill);
+  padding: 6px 12px; color: rgba(255, 255, 255, .75); font: 500 12.5px/1.2 var(--font-sans); }
+.nx-segmented > button[aria-selected="true"], .nx-segmented > button[aria-pressed="true"] { background: var(--cream); color: var(--on-cream); font-weight: 700; }
+
+/* Status: a dot and the state, in the state's colour */
+.nx-status { display: inline-flex; align-items: center; gap: 7px; font: 500 13px/1.3 var(--font-sans); color: var(--status, var(--unbuilt)); }
+.nx-status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.nx-status--ready { --status: var(--ready); }
+.nx-status--building { --status: var(--building); }
+.nx-status--unbuilt { --status: var(--unbuilt); }
+.nx-status--prominent { font-size: 12px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; }
+.nx-status--prominent::before { width: 9px; height: 9px; }
+.nx-status__note { color: var(--text-secondary); font-weight: 400; letter-spacing: 0; text-transform: none; }
+
+/* Artwork placeholder: a labelled gradient, never real game art */
+.nx-art { position: relative; overflow: hidden; background: var(--art, var(--surface)); background-size: cover; background-position: center; }
+.nx-art[data-label]::after { content: attr(data-label); position: absolute; left: 8px; bottom: 6px; font: 600 10px/1 var(--font-sans); letter-spacing: .4px; color: rgba(255, 255, 255, .7); }
+
+/* Game card: the collection row */
+.nx-card { display: flex; flex-direction: column; gap: 8px; width: var(--card-w, 260px); background: none; border: 0; padding: 0; text-align: left; cursor: pointer; color: var(--text); }
+.nx-card__art { width: 100%; aspect-ratio: 1.8; border-radius: var(--radius-thumb); box-shadow: inset 0 0 0 2px transparent; }
+.nx-card__name { font: 600 16px/1.25 var(--font-sans); color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nx-card__bar { height: 3px; margin-top: 4px; border-radius: var(--radius-pill); background: transparent; }
+.nx-card[aria-pressed="true"] .nx-card__art, .nx-card.is-selected .nx-card__art { box-shadow: inset 0 0 0 2px var(--cream); }
+.nx-card[aria-pressed="true"] .nx-card__bar, .nx-card.is-selected .nx-card__bar { background: var(--cream); }
+
+/* Manage menu: ManageMenuPanel, 250 pt, 36 pt rows */
+.nx-menu { width: var(--size-menu-width); box-sizing: border-box; padding: 6px; display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--radius-panel); box-shadow: var(--shadow-menu); }
+.nx-menu__row { display: flex; align-items: center; gap: 11px; height: var(--size-menu-row); padding: 0 10px; border: 0; border-radius: var(--radius-row);
+  background: none; color: var(--text); font: 500 13px/1 var(--font-sans); text-align: left; cursor: pointer; }
+.nx-menu__row svg { width: 18px; height: 14px; flex: none; }
+.nx-menu__row:hover, .nx-menu__row.is-highlighted { background: var(--fill-hover); }
+.nx-menu__row:disabled { opacity: .4; cursor: default; background: none; }
+.nx-menu__row--danger { color: var(--danger); }
+.nx-menu__sep { height: 1px; margin: 4px 6px; background: rgba(255, 255, 255, .1); }
+
+/* Sheet: LaunchOptionsView's layout */
+.nx-sheet { display: flex; flex-direction: column; box-sizing: border-box; background: var(--bg); color: var(--text); border-radius: var(--radius-group);
+  border: 1px solid var(--line-2); box-shadow: var(--shadow-sheet); overflow: hidden; }
+.nx-sheet__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 28px 30px 20px; }
+.nx-sheet__title { margin: 0; font: 800 26px/1.15 var(--font-sans); letter-spacing: -.6px; color: var(--text-strong); }
+.nx-sheet__subtitle { margin: 2px 0 0; font: 400 14px/1.35 var(--font-sans); color: var(--text-secondary); }
+.nx-sheet__body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 0 30px 24px; display: flex; flex-direction: column; gap: 10px; }
+.nx-sheet__footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 30px; border-top: 1px solid var(--line-1); }
+.nx-sheet__note { font: 400 12px/1.4 var(--font-sans); color: var(--text-secondary); }
+.nx-heading { margin: 8px 0 0 2px; font: 600 15px/1.25 var(--font-sans); color: var(--text-secondary); }
+.nx-group { background: var(--surface-group); border: 1px solid var(--line-1); border-radius: var(--radius-group); }
+.nx-group__row { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: var(--size-option-row); box-sizing: border-box; padding: 13px 18px; }
+.nx-group__row + .nx-group__row { border-top: 1px solid rgba(255, 255, 255, .06); margin-left: 18px; padding-left: 0; }
+.nx-group__label { font: 500 14px/1.3 var(--font-sans); color: var(--text); }
+.nx-group__note { font: 400 12px/1.4 var(--font-sans); color: var(--text-secondary); }
+
+/* Switch: LauncherSwitchStyle */
+.nx-switch { width: 40px; height: 24px; border: 0; padding: 3px; border-radius: var(--radius-pill); background: var(--fill-track); cursor: pointer; display: inline-flex; justify-content: flex-start; }
+.nx-switch::after { content: ""; width: 18px; height: 18px; border-radius: 50%; background: rgba(255, 255, 255, .85); box-shadow: 0 1px 2px rgba(0, 0, 0, .3); }
+.nx-switch[aria-checked="true"] { background: var(--cream); justify-content: flex-end; }
+.nx-switch[aria-checked="true"]::after { background: var(--bg); }
+
+/* Console tile: ConsoleGameTile, 1.8:1, 16 pt corners */
+.nx-console-tile { position: relative; width: var(--tile-w, 470px); aspect-ratio: 1.8; border-radius: var(--radius-console); overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--line-console); background: var(--art, var(--surface)); background-size: cover; background-position: center; }
+.nx-console-tile.is-selected { transform: scale(1.025); outline: 2px solid var(--cream); outline-offset: 4px; }
+.nx-console-tile__badge { position: absolute; left: 14px; bottom: 14px; padding: 10px 14px; border-radius: var(--radius-pill); background: var(--badge-bg);
+  font: 600 18px/1 var(--font-sans); color: var(--text); }
+
+
+body{margin:0}
+.proto{position:relative;width:1920px;height:1080px;background:#0b0b0c;font-family:Manrope,system-ui,sans-serif;outline:none}
+.proto:focus-visible{box-shadow:inset 0 0 0 3px #fff0d6}
+.bp-tile,.bp-row,.bp-btn,.bp-play,.bp-filter,.brow,.key,.cat,.bp-group{transition:transform .18s cubic-bezier(.2,.8,.2,1),translate .14s ease-out,outline-color .15s,background-color .15s,box-shadow .18s}
+.bp-row,.brow,.key,.cat{--nudge:3px}
+.bump-left{translate:calc(-1 * var(--nudge,6px)) 0}.bump-right{translate:var(--nudge,6px) 0}.bump-up{translate:0 calc(-1 * var(--nudge,6px))}.bump-down{translate:0 var(--nudge,6px)}
+.hide-focus .scr .bp-focus,.hide-focus .scr .is-focus{outline-color:transparent !important}
+.bp-g--icon{width:34px;padding:0}
+.bp-g--icon svg{width:18px;height:18px}
+.bp-icon{transition:background-color .15s,color .15s,translate .14s ease-out}
+/* Moving between screens: the new one fades in and slides a little, from the right going in, from the left coming back */
+.scr{position:absolute;inset:0;transition:opacity .26s ease-out,transform .32s cubic-bezier(.2,.8,.2,1)}
+.scr.is-entering{opacity:0;transform:translateX(28px);transition:none}
+.scr.is-entering.from-left{transform:translateX(-28px)}
+/* Menus slide in from their edge over a fading dim; dialogs settle in */
+.bp-panel{transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .2s ease-out}
+.bp-panel.p-in{transform:translateX(var(--px,60px));opacity:0;transition:none}
+.bp-dim{transition:opacity .22s ease-out}
+.bp-dim.p-in{opacity:0;transition:none}
+.dlg{transition:opacity .2s ease-out,transform .26s cubic-bezier(.2,.8,.2,1)}
+.dlg.p-in{opacity:0;transform:translate(-50%,-47%) scale(.97);transition:none}
+.kb-row{display:flex;justify-content:center;gap:12px}
+.key{width:104px;height:80px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);display:inline-flex;align-items:center;justify-content:center;font:600 30px/1 Manrope,sans-serif;color:#fff;box-sizing:border-box;transition:outline-color .12s}
+.key--wide{width:220px;font-size:22px}
+.key--space{width:560px;font-size:22px;color:rgba(235,235,245,.6)}
+.key--go{width:220px;font-size:22px;background:#fff0d6;color:#000;border-color:#fff0d6;font-weight:800}
+.key.is-focus{background:rgba(255,255,255,.18);outline:3px solid #fff0d6;outline-offset:2px}
+.key--go.is-focus{background:#fff0d6}
+.brow{display:flex;align-items:center;gap:28px;padding:18px 22px;border-radius:16px;box-sizing:border-box}
+.brow.is-focus{background:rgba(255,255,255,.08);outline:3px solid #fff0d6;outline-offset:0}
+.thumb{width:192px;aspect-ratio:1.8;border-radius:10px;background:var(--art);flex:none}
+.bname{font:700 24px/1.2 Manrope,sans-serif;color:#fff}
+.bsub{font:500 19px/1.3 Manrope,sans-serif;color:rgba(235,235,245,.6)}
+.radio{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.35);box-sizing:border-box;flex:none;margin-left:auto}
+.radio.on{border:8px solid #fff0d6}
+.opt{display:flex;flex-direction:column;gap:4px}
+.opt small{font:500 18px/1.3 Manrope,sans-serif;color:rgba(235,235,245,.6)}
+.legend{display:inline-flex;align-items:center;gap:12px;padding:10px 18px 10px 10px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);font:500 20px/1 Manrope,sans-serif;color:rgba(235,235,245,.7)}
+.legend b{color:#fff0d6;font-weight:800}
+.lg-btn{width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.16);color:#fff;font:800 18px/1 Manrope,sans-serif}
+.lg-btn.lg-a{background:#fff0d6;color:#000}
+.lg-btn svg{width:20px;height:20px}
+.toast{position:absolute;left:50%;bottom:112px;transform:translateX(-50%);z-index:6;padding:16px 26px;border-radius:999px;background:rgba(26,26,28,.96);border:1px solid rgba(255,255,255,.14);box-shadow:0 12px 30px rgba(0,0,0,.5);font:600 20px/1.2 Manrope,sans-serif;color:#fff;white-space:nowrap}
+.deck{position:absolute;left:0;right:0;top:1080px;height:340px;box-sizing:border-box;padding:0 72px;display:flex;align-items:center;gap:56px;background:#141416;border-top:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.92)}
+.k{width:62px;height:62px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#fff;font:800 17px/1 Manrope,sans-serif;cursor:pointer}
+.k:hover{background:rgba(255,255,255,.15)}
+.k:active{background:#fff0d6;color:#000}
+.k:focus-visible{outline:3px solid #fff0d6;outline-offset:3px}
+.k--pill{width:auto;min-width:76px;height:46px;border-radius:999px;padding:0 16px;font-size:15px}
+.k--sq{border-radius:12px}
+.k--a{background:#fff0d6;color:#000;border-color:#fff0d6}
+.fam{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+.fam button{border:0;background:none;color:rgba(255,255,255,.75);font:600 15px/1 Manrope,sans-serif;padding:10px 16px;border-radius:999px;cursor:pointer}
+.fam button[aria-pressed="true"]{background:#fff0d6;color:#000;font-weight:800}
+.val{display:inline-flex;align-items:center;gap:18px;min-width:300px;justify-content:space-between;font:700 23px/1 Manrope,sans-serif;color:#fff0d6}
+.val i{font-style:normal;color:rgba(255,240,214,.55);font-size:20px}
+.note{font:500 18px/1.35 Manrope,sans-serif;color:rgba(235,235,245,.6)}
+.dot{width:10px;height:10px;border-radius:50%;background:#fff0d6;flex:none}
+.cat{display:flex;align-items:center;gap:16px;height:64px;padding:0 22px;border-radius:14px;font:600 23px/1 Manrope,sans-serif;color:rgba(255,255,255,.75);position:relative}
+.cat small{margin-left:auto;font:500 18px/1 Manrope,sans-serif;color:rgba(235,235,245,.6)}
+.cat.on{background:rgba(255,255,255,.1);color:#fff;font-weight:800}
+.cat.on::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:4px;border-radius:4px;background:#fff0d6}
+.cat.is-focus{outline:3px solid #fff0d6;outline-offset:0}
+.dlg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);box-sizing:border-box;padding:44px 48px;border-radius:24px;background:rgba(26,26,28,.98);border:1px solid rgba(255,255,255,.12);box-shadow:0 24px 60px rgba(0,0,0,.55);z-index:4;display:flex;flex-direction:column;gap:18px}
+.dlg h2{margin:0;font:800 40px/1.1 Manrope,sans-serif;letter-spacing:-.8px;color:#fff}
+.dlg p{margin:0;font:500 21px/1.45 Manrope,sans-serif;color:rgba(235,235,245,.7)}
+.danger{background:rgba(255,107,102,.14);border-color:rgba(255,107,102,.45);color:#ff6b66}
+.callout{display:flex;gap:18px;align-items:flex-start;padding:22px 26px;border-radius:14px;background:rgba(255,199,61,.08);border:1px solid rgba(255,199,61,.35)}
+.small{font:500 15px/1.45 Manrope,sans-serif;color:rgba(235,235,245,.6)}
+.status{font:700 13px/1.2 Manrope,sans-serif;letter-spacing:1.4px;text-transform:uppercase;color:rgba(235,235,245,.6)}
+
+html,body{margin:0;height:100%;background:#000;color:#fff;font-family:Manrope,system-ui,sans-serif;overflow:hidden}
+.bar{position:fixed;left:0;right:0;top:0;height:56px;box-sizing:border-box;padding:0 16px 0 20px;display:flex;align-items:center;gap:12px;background:#121214;border-bottom:1px solid rgba(255,255,255,.08);font:500 13px/1 Manrope,sans-serif;color:rgba(235,235,245,.6);z-index:10;white-space:nowrap}
+.brand{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.brand b{color:#fff;font-weight:800;margin-right:6px}
+.sp{flex:1}
+.pad-pill{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);max-width:300px;overflow:hidden;text-overflow:ellipsis}
+.pad-pill i{width:8px;height:8px;border-radius:50%;background:#ffc73d;flex:none}
+.pad-pill.on{color:rgba(255,255,255,.88)}
+.pad-pill.on i{background:#40d678}
+.seg{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.seg button,.help>button,.icon{border:0;background:none;color:rgba(255,255,255,.75);font:600 13px/1 Manrope,sans-serif;padding:8px 13px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:#fff0d6;color:#000;font-weight:800}
+.help{position:relative}
+.help>button,.icon{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);height:32px;padding:0 13px}
+.icon{width:32px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.seg button:hover,.help>button:hover,.icon:hover{color:#fff}
+.pop{position:absolute;right:0;top:42px;width:280px;padding:16px 18px;border-radius:14px;background:#1a1a1c;border:1px solid rgba(255,255,255,.12);box-shadow:0 16px 40px rgba(0,0,0,.5);white-space:normal;font:500 13px/1.45 Manrope,sans-serif;color:rgba(235,235,245,.7)}
+.pop b{display:block;color:#fff;font-weight:800;margin:0 0 8px}
+.pop dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0 0 14px}
+.pop dt{color:#fff0d6;font-weight:700}
+.pop dd{margin:0}
+.pop p{margin:0}
+@media (max-width:760px){.brand{display:none}}
+.stage{position:fixed;left:0;top:56px;width:1920px;height:1080px;transform-origin:0 0}
+.proto{outline:none}
+</style>
+</head>
+<body>
+<div class="bar">
+  <span class="brand"><b>NX2Apple</b> Console mode · prototype</span>
+  <span class="sp"></span>
+  <span class="pad-pill" id="padpill" title=""><i></i><span id="padinfo">No controller · press a button</span></span>
+  <span class="seg" role="group" aria-label="Button glyphs"><button data-fam="xbox">Xbox</button><button data-fam="ps">PlayStation</button><button data-fam="nintendo">Nintendo</button></span>
+  <span class="help"><button id="helpbtn" aria-expanded="false">Keys</button>
+    <div class="pop" id="help" hidden>
+      <b>Keyboard</b>
+      <dl><dt>← ↑ → ↓</dt><dd>Move</dd><dt>return</dt><dd>A</dd><dt>esc</dt><dd>B</dd><dt>X · Y</dt><dd>X · Y</dd><dt>Q · E</dt><dd>L · R</dd><dt>M</dt><dd>Main menu</dd><dt>V</dt><dd>Quick menu</dd><dt>H</dt><dd>Home</dd></dl>
+      <b>Controller</b>
+      <p>Use Chrome or Safari and press any button once. Firefox-based browsers may not receive the buttons on a Mac.</p>
+    </div>
+  </span>
+  <button class="icon" id="reset" title="Restart" aria-label="Restart"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"></path></svg></button>
+</div>
+<div class="stage" id="stage"><div class="proto" id="proto" tabindex="0"></div></div>
+<template id="tpl">
+  <div class="bp {{tvCls}}">
+
+    <div class="{{scrCls}}">
+    <sc-if value="{{isBrowse}}" hint-placeholder-val="{{ true }}">
+      <div class="bp-backdrop" style="--art: {{hero.art}}"></div>
+    </sc-if>
+    <sc-if value="{{isGameLike}}" hint-placeholder-val="{{ false }}">
+      <div class="bp-backdrop" style="--art: {{game.art}}"></div>
+    </sc-if>
+
+    <sc-if value="{{showTop}}" hint-placeholder-val="{{ true }}">
+      <header class="bp-top">
+        <sc-if value="{{isTabs}}" hint-placeholder-val="{{ true }}">
+          <span class="bp-word">{{screenTitle}}</span>
+          <sc-if value="{{showSearchIcon}}" hint-placeholder-val="{{ true }}"><span class="{{searchCls}}" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M16 16l4 4M11 17a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"></path></svg></span></sc-if>
+        </sc-if>
+        <sc-if value="{{isGamePage}}" hint-placeholder-val="{{ false }}">
+          <span class="bp-hint" style="color: rgba(235,235,245,.6)"><span class="{{bk.cls}}" aria-label="{{bk.name}}">{{bk.g}}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display: {{bk.svg}}"><path d="{{bk.d}}"></path></svg></span>{{backLabel}}</span>
+        </sc-if>
+        <span class="bp-spacer"></span>
+        <span class="bp-pad"><span class="bp-pad__p">P1</span><span class="bp-pad__batt">78%</span></span>
+        <span class="bp-pad bp-pad--low"><span class="bp-pad__p">P2</span><span class="bp-pad__batt">12%</span></span>
+        <span class="bp-clock">21:42</span>
+      </header>
+    </sc-if>
+
+    <sc-if value="{{isHome}}" hint-placeholder-val="{{ true }}">
+      <section style="position: absolute; left: 96px; top: 156px; width: 1100px; display: flex; flex-direction: column; gap: 22px; z-index: 1">
+        <span class="{{hero.eyebrowCls}}">{{hero.statusText}}</span>
+        <h1 class="bp-title">{{hero.n}}</h1>
+        <div class="bp-meta"><span>{{hero.sub}}</span></div>
+      </section>
+      <div style="position: absolute; left: 0; right: 0; top: 420px; bottom: 84px; overflow: hidden; padding: 0 0 0 96px; z-index: 1">
+        <div style="display: flex; flex-direction: column; gap: 40px; padding-top: 20px; transform: translateY(-{{homeScroll}}px); transition: transform .25s ease-out">
+          <sc-for list="{{homeRows}}" as="row" hint-placeholder-count="3">
+            <section style="display: flex; flex-direction: column; gap: 26px; opacity: {{row.opacity}}; transition: opacity .2s">
+              <h2 class="bp-shelf-title">{{row.title}} <small>{{row.count}}</small></h2>
+              <div style="display: flex; gap: 32px; align-items: flex-start">
+                <sc-for list="{{row.tiles}}" as="t" hint-placeholder-count="5">
+                  <div style="display: flex; flex-direction: column">
+                    <div class="{{t.cls}}" style="--w: 420px; --art: {{t.art}}; --glow: {{t.glow}}"></div>
+                    <div class="bp-cap"><span class="bp-cap__name">{{t.n}}</span><span class="bp-cap__sub">{{t.sub}}</span></div>
+                  </div>
+                </sc-for>
+              </div>
+            </section>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isLibrary}}" hint-placeholder-val="{{ false }}">
+      <section style="position: absolute; left: 96px; right: 96px; top: 132px; display: flex; align-items: center; gap: 14px; z-index: 1">
+        <nav class="bp-nav" aria-label="Filters">
+          <span class="bp-g bp-g--sm">{{g.l}}</span>
+          <sc-for list="{{filters}}" as="f" hint-placeholder-count="4">
+            <span class="bp-tab" aria-selected="{{f.active}}">{{f.name}} <small style="opacity: .6">{{f.count}}</small></span>
+          </sc-for>
+          <span class="bp-g bp-g--sm">{{g.r}}</span>
+        </nav>
+      </section>
+      <h2 class="bp-shelf-title" style="position: absolute; left: 96px; top: 222px; font-size: 26px; z-index: 1">{{libHeading}} <small>{{libCount}}</small></h2>
+      <div style="position: absolute; left: 0; right: 0; top: 262px; bottom: 84px; overflow: hidden; padding: 24px 96px 0">
+        <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); column-gap: 32px; row-gap: 40px; padding: 8px; transform: translateY(-{{libScroll}}px); transition: transform .25s ease-out">
+          <sc-for list="{{libTiles}}" as="t" hint-placeholder-count="10">
+            <div style="visibility: {{t.vis}}">
+              <div class="{{t.cls}}" style="--w: 100%; --art: {{t.art}}; --glow: {{t.glow}}"></div>
+              <div class="bp-cap" style="display: {{capDisplay}}"><span class="bp-cap__name">{{t.n}}</span><span class="{{t.statusCls}}" style="font-size: 18px">{{t.statusText}}</span></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isGamePage}}" hint-placeholder-val="{{ false }}">
+      <section style="position: absolute; left: 96px; top: 210px; width: 1500px; display: flex; flex-direction: column; gap: 20px; z-index: 1">
+        <span class="{{game.eyebrowCls}}">{{game.statusText}}</span>
+        <h1 class="bp-title">{{game.n}}</h1>
+      </section>
+      <section style="position: absolute; left: 96px; right: 96px; top: 440px; display: flex; align-items: center; gap: 44px; z-index: 1">
+        <span class="{{play.cls}}" style="min-width: 220px; justify-content: center">{{play.label}}</span>
+        <div style="display: flex; flex-direction: column; gap: 8px"><span class="bp-label">Last played</span><span style="font: 700 24px/1.1 Manrope, sans-serif; color: #fff">{{game.sub}}</span></div>
+        <div style="display: flex; flex-direction: column; gap: 8px"><span class="bp-label">Play time</span><span style="font: 700 24px/1.1 Manrope, sans-serif; color: #fff">14 h 20 min</span></div>
+        <div style="display: flex; flex-direction: column; gap: 8px"><span class="bp-label">Saves</span><span style="font: 700 24px/1.1 Manrope, sans-serif; color: #40d678">In sync</span></div>
+        <span class="bp-spacer"></span>
+        <sc-for list="{{iconActs}}" as="a" hint-placeholder-count="3">
+          <span class="{{a.cls}}" aria-label="{{a.label}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{a.sw}}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{a.d}}"></path></svg></span>
+        </sc-for>
+      </section>
+      <nav class="bp-nav" aria-label="Game page tabs" style="position: absolute; left: 0; right: 0; top: 580px; justify-content: center; z-index: 1">
+        <span class="bp-g bp-g--sm">{{g.l}}</span>
+        <sc-for list="{{gameTabs}}" as="t" hint-placeholder-count="4">
+          <span class="bp-tab" aria-selected="{{t.sel}}">{{t.name}}</span>
+        </sc-for>
+        <span class="bp-g bp-g--sm">{{g.r}}</span>
+      </nav>
+      <sc-if value="{{isCheatsTab}}" hint-placeholder-val="{{ false }}">
+        <section style="position: absolute; left: 96px; right: 96px; top: 660px; display: grid; grid-template-columns: 1.4fr 1fr; gap: 28px; z-index: 1">
+          <div class="bp-group" style="padding: 10px; display: flex; flex-direction: column; gap: 2px">
+            <sc-for list="{{cheatRows}}" as="ch" hint-placeholder-count="5">
+              <div class="{{ch.cls}}" style="height: 60px; opacity: {{ch.op}}">{{ch.n}}<span class="bp-spacer"></span><span class="bp-row__end" style="color: {{ch.endColor}}; margin-right: 16px">{{ch.end}}</span><sc-if value="{{ch.isSwitch}}" hint-placeholder-val="{{ true }}"><span class="bp-switch" aria-checked="{{ch.on}}"></span></sc-if></div>
+            </sc-for>
+          </div>
+          <div class="bp-group" style="padding: 24px 28px; display: flex; flex-direction: column; gap: 10px; align-self: start">
+            <span class="bp-label">This build</span>
+            <span style="font: 600 22px/1.2 Manrope, sans-serif; color: #fff">4F8A1C93E2B7D051</span>
+            <span class="note">Switches are saved at once and apply the next time the game starts. Cheats are imported on the desktop.</span>
+          </div>
+        </section>
+      </sc-if>
+      <sc-if value="{{notCheatsTab}}" hint-placeholder-val="{{ true }}">
+      <section style="position: absolute; left: 96px; right: 96px; top: 680px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; z-index: 1">
+        <sc-for list="{{tabCards}}" as="c" hint-placeholder-count="3">
+          <div class="{{c.cls}}" style="padding: 22px 26px; display: flex; flex-direction: column; gap: 10px">
+            <span class="bp-label">{{c.label}}</span>
+            <span style="font: 600 24px/1.3 Manrope, sans-serif; color: #fff">{{c.value}}</span>
+            <span style="font: 500 19px/1.3 Manrope, sans-serif; color: rgba(235,235,245,.6)">{{c.note}}</span>
+          </div>
+        </sc-for>
+      </section>
+      </sc-if>
+    </sc-if>
+
+    <sc-if value="{{isLaunch}}" hint-placeholder-val="{{ false }}">
+      <nav style="position: absolute; left: 72px; top: 136px; width: 420px; display: flex; flex-direction: column; gap: 6px; z-index: 1" aria-label="Sections">
+        <sc-for list="{{loCats}}" as="lc" hint-placeholder-count="3"><span class="{{lc.cls}}">{{lc.name}}<small>{{lc.count}}</small></span></sc-for>
+        <div style="height: 1px; background: rgba(255,255,255,.1); margin: 18px 22px"></div>
+        <span class="note" style="padding: 0 22px">{{loChanged}}</span>
+        <span class="{{loResetCls}}" style="margin: 22px 0 0 22px; align-self: flex-start">Reset to tested defaults</span>
+      </nav>
+      <section class="bp-group" style="position: absolute; left: 540px; right: 96px; top: 136px; padding: 12px; display: flex; flex-direction: column; gap: 4px; z-index: 1; background: rgba(20,20,22,.92)" aria-label="Basic settings">
+        <sc-for list="{{loRows}}" as="lr" hint-placeholder-count="7">
+          <div class="{{lr.cls}}" style="height: auto; min-height: 76px; padding: 14px 22px; flex-wrap: wrap; row-gap: 8px; opacity: {{lr.op}}"><span class="dot" style="opacity: {{lr.dot}}"></span>{{lr.n}}<span class="bp-spacer"></span><span class="val"><i>◀</i>{{lr.v}}<i>▶</i></span><sc-if value="{{lr.hasNote}}" hint-placeholder-val="{{ false }}"><span class="note" style="flex-basis: 100%; padding-left: 30px">{{lr.note}}</span></sc-if></div>
+        </sc-for>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{isSettings}}" hint-placeholder-val="{{ false }}">
+      <nav style="position: absolute; left: 72px; top: 136px; width: 420px; display: flex; flex-direction: column; gap: 6px" aria-label="Settings sections">
+        <span class="cat on">General</span>
+        <span class="cat">Controllers<small>2 connected</small></span>
+        <span class="cat">Home button<small style="color: #ffc73d">Needs a step</small></span>
+        <span class="cat">About</span>
+      </nav>
+      <section style="position: absolute; left: 540px; right: 96px; top: 136px; display: flex; flex-direction: column; gap: 22px">
+        <div class="callout">
+          <span class="dot" style="background: #ffc73d; width: 14px; height: 14px; margin-top: 8px"></span>
+          <div style="display: flex; flex-direction: column; gap: 8px; flex: 1 1 auto">
+            <span style="font: 700 24px/1.2 Manrope, sans-serif; color: #fff">Quit with the Home button</span>
+            <span class="note" style="font-size: 19px">In a game, hold Home for 2 seconds to quit it. Right now your Mac keeps the Home button for itself.</span>
+          </div>
+          <span class="{{setBtnCls}}" style="height: 60px; align-self: center">Open Settings</span>
+        </div>
+        <div class="bp-group" style="padding: 12px; display: flex; flex-direction: column; gap: 2px">
+          <sc-for list="{{setRows}}" as="sr" hint-placeholder-count="4">
+            <div class="{{sr.cls}}" style="height: auto; min-height: 76px; padding: 14px 22px; flex-wrap: wrap; row-gap: 8px">{{sr.n}}<span class="bp-spacer"></span><sc-if value="{{sr.isSwitch}}" hint-placeholder-val="{{ true }}"><span class="bp-switch" aria-checked="{{sr.on}}"></span></sc-if><sc-if value="{{sr.hasVal}}" hint-placeholder-val="{{ false }}"><span class="val"><i>◀</i>{{sr.v}}<i>▶</i></span></sc-if><sc-if value="{{sr.hasNote}}" hint-placeholder-val="{{ false }}"><span class="note" style="flex-basis: 100%">{{sr.note}}</span></sc-if></div>
+          </sc-for>
+        </div>
+        <div class="bp-group" style="padding: 12px">
+          <div class="{{setBackCls}}" style="height: 76px">Back to desktop<span class="bp-row__end">Select, then Back to desktop, works too</span></div>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{isCrashed}}" hint-placeholder-val="{{ false }}">
+      <div class="bp-dim" style="background: rgba(8,8,9,.55)"></div>
+      <div class="dlg" style="width: 860px" role="alertdialog" aria-label="The game stopped">
+        <span class="bp-eyebrow" style="color: #ff6b66">The game stopped</span>
+        <h2>{{game.n}} closed after 12 minutes</h2>
+        <p>It did not quit the usual way. Your last save is from 21:30, so you lose at most what you played after it.</p>
+        <div class="callout" style="padding: 18px 22px">
+          <span class="dot" style="background: #ffc73d; margin-top: 8px"></span>
+          <span class="note" style="font-size: 19px; color: rgba(255,255,255,.85)">The last run did not end cleanly, so cheats start off. Switch them on again in the game's Cheats tab.</span>
+        </div>
+        <div style="display: flex; gap: 20px; margin-top: 12px">
+          <sc-for list="{{crBtns}}" as="cb" hint-placeholder-count="2"><span class="{{cb.cls}}" style="padding: 0 40px">{{cb.label}}</span></sc-for>
+        </div>
+        <p style="font-size: 18px">If it happens again, the game log is on the desktop: Manage, then Show log.</p>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isStarting}}" hint-placeholder-val="{{ false }}">
+      <section style="position: absolute; left: 96px; bottom: 170px; width: 900px; display: flex; flex-direction: column; gap: 24px; z-index: 1">
+        <span class="bp-eyebrow bp-eyebrow--building">Starting</span>
+        <h1 class="bp-title">{{game.n}}</h1>
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 18px">
+          <div style="display: flex; align-items: center; gap: 16px; font: 700 24px/1 Manrope, sans-serif; color: #fff">{{stageText}}<span class="bp-spacer"></span><span style="font: 600 20px/1 Manrope, sans-serif; color: rgba(235,235,245,.6); font-variant-numeric: tabular-nums">{{shaderText}}</span></div>
+          <div class="bp-bar" style="--p: {{shaderPct}}%"><i></i></div>
+          <span style="font: 400 18px/1.4 Manrope, sans-serif; color: rgba(235,235,245,.6)">Only the first start takes this long.</span>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{isInGame}}" hint-placeholder-val="{{ false }}">
+      <div style="position: absolute; inset: 0; background: {{game.art}}; filter: brightness(.8)"></div>
+      <div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 36px 48px; border-radius: 16px; background: rgba(14,14,15,.82); text-align: center">
+        <span style="font: 800 34px/1.2 Manrope, sans-serif; color: #fff">{{game.n}} is running in its own window</span>
+        <span style="font: 500 20px/1.4 Manrope, sans-serif; color: rgba(235,235,245,.7)">Phase 1 stops here. Press {{homeName}} (H on the keyboard) to quit the game, or X to see what follows a crash.</span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isSearch}}" hint-placeholder-val="{{ false }}">
+      <div style="position: absolute; left: 96px; right: 96px; top: 116px; height: 76px; box-sizing: border-box; padding: 0 28px; display: flex; align-items: center; gap: 18px; border-radius: 999px; background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.22)">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="rgba(235,235,245,.6)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M16 16l4 4M11 17a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"></path></svg>
+        <span style="font: 600 30px/1 Manrope, sans-serif; color: {{queryColor}}; white-space: pre">{{queryShown}}</span><span style="width: 3px; height: 34px; margin-left: -14px; background: #fff0d6; border-radius: 2px"></span>
+        <span class="bp-spacer"></span>
+        <span style="font: 500 20px/1 Manrope, sans-serif; color: rgba(235,235,245,.6)">{{resCountText}}</span>
+      </div>
+      <section style="position: absolute; left: 96px; right: 96px; top: 230px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 32px">
+        <sc-for list="{{searchRes}}" as="t" hint-placeholder-count="3">
+          <div>
+            <div class="{{t.cls}}" style="--w: 100%; --art: {{t.art}}; --glow: {{t.glow}}"></div>
+            <div class="bp-cap"><span class="bp-cap__name">{{t.n}}</span><span class="{{t.statusCls}}" style="font-size: 18px">{{t.statusText}}</span></div>
+          </div>
+        </sc-for>
+      </section>
+      <section style="position: absolute; left: 0; right: 0; top: 548px; bottom: 84px; display: flex; flex-direction: column; justify-content: center; gap: 12px; background: rgba(20,20,22,.96); border-top: 1px solid rgba(255,255,255,.1); opacity: {{kbOpacity}}" aria-label="On-screen keyboard">
+        <sc-for list="{{kbRows}}" as="kr" hint-placeholder-count="4">
+          <div class="kb-row">
+            <sc-for list="{{kr.keys}}" as="kk" hint-placeholder-count="9"><span class="{{kk.cls}}">{{kk.label}}</span></sc-for>
+          </div>
+        </sc-for>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{isBuilds}}" hint-placeholder-val="{{ false }}">
+      <section style="position: absolute; left: 96px; right: 96px; top: 124px; display: flex; flex-direction: column; gap: 10px">
+        <sc-for list="{{buildRows}}" as="b" hint-placeholder-count="4">
+          <sc-if value="{{b.hasSec}}" hint-placeholder-val="{{ true }}"><span class="bp-label" style="margin: 14px 0 4px">{{b.sec}}</span></sc-if>
+          <div class="{{b.cls}}">
+            <div class="thumb" style="--art: {{b.art}}"></div>
+            <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 10px; min-width: 0">
+              <div style="display: flex; align-items: baseline; gap: 16px"><span class="bname">{{b.n}}</span><span class="bsub">{{b.sub}}</span></div>
+              <sc-if value="{{b.running}}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; align-items: center; gap: 18px">
+                  <div class="bp-bar" style="flex: 1 1 auto; --p: {{buildPct}}%"><i style="background: #ffc73d"></i></div>
+                  <span style="font: 700 20px/1 Manrope, sans-serif; color: #ffc73d; font-variant-numeric: tabular-nums">{{buildPct}}%</span>
+                </div>
+                <span class="bsub">Step 3 of 5 · Converting shaders · about 4 minutes left</span>
+              </sc-if>
+            </div>
+            <span class="{{b.scls}}" style="font-size: 20px">{{b.status}}</span>
+          </div>
+        </sc-for>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{isControls}}" hint-placeholder-val="{{ false }}">
+      <div style="position: absolute; left: 96px; top: 132px; display: flex; align-items: center; gap: 14px; z-index: 1">
+        <span class="bp-g bp-g--sm">{{g.l}}</span>
+        <sc-for list="{{ctlPlayers}}" as="cp" hint-placeholder-count="2"><span class="bp-tab" aria-selected="{{cp.sel}}">{{cp.name}}</span></sc-for>
+        <span class="bp-g bp-g--sm">{{g.r}}</span>
+      </div>
+      <svg style="position: absolute; left: 150px; top: 230px; z-index: 1" width="900" height="520" viewBox="0 0 900 520" aria-hidden="true">
+        <rect x="150" y="40" width="150" height="40" rx="16" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.2)" stroke-width="2"></rect>
+        <rect x="600" y="40" width="150" height="40" rx="16" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.2)" stroke-width="2"></rect>
+        <rect x="140" y="86" width="170" height="30" rx="14" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.22)" stroke-width="2"></rect>
+        <rect x="590" y="86" width="170" height="30" rx="14" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.22)" stroke-width="2"></rect>
+        <path d="M250 110 H650 C745 110 800 160 825 250 L862 400 C878 462 846 508 790 508 C748 508 722 486 700 452 L662 396 H238 L200 452 C178 486 152 508 110 508 C54 508 22 462 38 400 L75 250 C100 160 155 110 250 110 Z" fill="rgba(26,26,28,.9)" stroke="rgba(255,255,255,.22)" stroke-width="2"></path>
+        <circle cx="250" cy="230" r="48" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.22)" stroke-width="2"></circle>
+        <rect x="310" y="335" width="60" height="30" rx="6" fill="rgba(255,255,255,.12)"></rect>
+        <rect x="325" y="320" width="30" height="60" rx="6" fill="rgba(255,255,255,.12)"></rect>
+        <circle cx="560" cy="350" r="44" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.22)" stroke-width="2"></circle>
+        <circle cx="450" cy="262" r="18" fill="rgba(255,255,255,.14)"></circle>
+        <circle cx="680" cy="184" r="24" fill="{{fd.top.fill}}"></circle>
+        <text x="680" y="191" text-anchor="middle" font-family="Manrope, sans-serif" font-weight="800" font-size="20" fill="{{fd.top.ink}}">{{fd.top.g}}</text>
+        <path transform="translate(668 172)" d="{{fd.top.d}}" fill="none" stroke="{{fd.top.ink}}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+        <circle cx="634" cy="230" r="24" fill="{{fd.left.fill}}"></circle>
+        <text x="634" y="237" text-anchor="middle" font-family="Manrope, sans-serif" font-weight="800" font-size="20" fill="{{fd.left.ink}}">{{fd.left.g}}</text>
+        <path transform="translate(622 218)" d="{{fd.left.d}}" fill="none" stroke="{{fd.left.ink}}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+        <circle cx="726" cy="230" r="24" fill="{{fd.right.fill}}"></circle>
+        <text x="726" y="237" text-anchor="middle" font-family="Manrope, sans-serif" font-weight="800" font-size="20" fill="{{fd.right.ink}}">{{fd.right.g}}</text>
+        <path transform="translate(714 218)" d="{{fd.right.d}}" fill="none" stroke="{{fd.right.ink}}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+        <circle cx="680" cy="276" r="24" fill="{{fd.bottom.fill}}"></circle>
+        <text x="680" y="283" text-anchor="middle" font-family="Manrope, sans-serif" font-weight="800" font-size="20" fill="{{fd.bottom.ink}}">{{fd.bottom.g}}</text>
+        <path transform="translate(668 264)" d="{{fd.bottom.d}}" fill="none" stroke="{{fd.bottom.ink}}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+        
+        
+        
+        
+        
+        
+        
+      </svg>
+      <div style="position: absolute; left: 150px; top: 776px; display: flex; gap: 18px; z-index: 1">
+        <sc-for list="{{legend}}" as="lg" hint-placeholder-count="4"><span class="legend"><span class="{{lg.cls}}" aria-label="{{lg.name}}">{{lg.from}}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true" style="display: {{lg.svg}}"><path d="{{lg.d}}"></path></svg></span>sends <b>{{lg.to}}</b></span></sc-for>
+      </div>
+      <p style="position: absolute; left: 150px; top: 860px; width: 900px; margin: 0; font: 500 21px/1.45 Manrope, sans-serif; color: rgba(235,235,245,.6); z-index: 1">{{layoutNote}} Only the four face buttons change between layouts.</p>
+      <aside class="bp-group" style="position: absolute; left: 1220px; right: 96px; top: 210px; padding: 26px; display: flex; flex-direction: column; gap: 8px; background: rgba(20,20,22,.92); z-index: 1" aria-label="Layout">
+        <span class="bp-label" style="margin: 0 0 8px 8px">Layout for this game</span>
+        <sc-for list="{{ctlRows}}" as="cr" hint-placeholder-count="4">
+          <div class="{{cr.cls}}" style="height: auto; padding: 16px 22px"><span class="opt">{{cr.name}}<small>{{cr.note}}</small></span><span class="{{cr.radio}}"></span></div>
+        </sc-for>
+        <div class="bp-sep"></div>
+        <div class="{{ctlMergeCls}}" style="height: 72px">All controllers are player 1<span class="bp-spacer"></span><span class="bp-switch" aria-checked="{{mergeOn}}"></span></div>
+      </aside>
+    </sc-if>
+
+    </div>
+
+    <sc-if value="{{isMain}}" hint-placeholder-val="{{ false }}">
+      <div class="bp-dim {{inMain}}"></div>
+      <aside class="bp-panel {{inMain}}" style="--px: -60px; left: 0; width: 480px; padding: 48px 28px 110px; border-right: 1px solid rgba(255,255,255,.1); gap: 6px" aria-label="Main menu">
+        <div style="padding: 0 22px 30px"><span class="bp-word" style="font-size: 34px">NX2Apple</span></div>
+        <sc-for list="{{mainItems}}" as="m" hint-placeholder-count="7">
+          <sc-if value="{{m.sep}}" hint-placeholder-val="{{ false }}"><div class="bp-sep"></div></sc-if>
+          <span class="{{m.cls}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{m.d}}"></path></svg>{{m.name}}<span class="bp-row__end">{{m.end}}</span></span>
+        </sc-for>
+      </aside>
+    </sc-if>
+
+    <sc-if value="{{isQuick}}" hint-placeholder-val="{{ false }}">
+      <div class="bp-dim {{inQuick}}"></div>
+      <aside class="bp-panel {{inQuick}}" style="right: 0; width: 560px; padding: 44px 36px 110px; gap: 18px; border-left: 1px solid rgba(255,255,255,.1)" aria-label="Quick menu">
+        <nav style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px" aria-label="Quick menu sections"><span class="bp-g bp-g--sm">{{g.l}}</span><span class="bp-tab" style="font-size: 19px; padding: 12px 18px">Alerts</span><span class="bp-tab" aria-selected="true" style="font-size: 19px; padding: 12px 18px">Controllers</span><span class="bp-tab" style="font-size: 19px; padding: 12px 18px">Display</span><span class="bp-g bp-g--sm">{{g.r}}</span></nav>
+        <sc-for list="{{quickItems}}" as="q" hint-placeholder-count="5">
+          <span class="{{q.cls}}" style="height: 76px">{{q.name}}<span class="bp-spacer"></span><sc-if value="{{q.isSwitch}}" hint-placeholder-val="{{ false }}"><span class="bp-switch" aria-checked="{{q.on}}"></span></sc-if><span class="bp-row__end">{{q.end}}</span></span>
+        </sc-for>
+      </aside>
+    </sc-if>
+
+    <sc-if value="{{isLibOpts}}" hint-placeholder-val="{{ false }}">
+      <div class="bp-dim {{inLib}}"></div>
+      <aside class="bp-panel {{inLib}}" style="right: 0; width: 600px; padding: 44px 36px 110px; gap: 10px; border-left: 1px solid rgba(255,255,255,.1)" aria-label="Library options">
+        <h2 style="margin: 0 0 14px 6px; font: 800 34px/1.1 Manrope, sans-serif; color: #fff">Library options</h2>
+        <span class="bp-label" style="margin: 0 0 4px 6px">Sort by</span>
+        <div class="bp-group" style="padding: 8px">
+          <sc-for list="{{sortRows}}" as="so" hint-placeholder-count="4"><div class="{{so.cls}}" style="height: 72px">{{so.name}}<span class="{{so.radio}}"></span></div></sc-for>
+        </div>
+        <span class="bp-label" style="margin: 18px 0 4px 6px">Show</span>
+        <div class="bp-group" style="padding: 8px">
+          <sc-for list="{{showRows}}" as="sh" hint-placeholder-count="2"><div class="{{sh.cls}}" style="height: 72px">{{sh.name}}<span class="bp-spacer"></span><span class="bp-switch" aria-checked="{{sh.on}}"></span></div></sc-for>
+        </div>
+      </aside>
+    </sc-if>
+
+    <sc-if value="{{isManage}}" hint-placeholder-val="{{ false }}">
+      <div class="bp-dim {{inManage}}" style="background: rgba(8,8,9,.5)"></div>
+      <aside class="bp-panel {{inManage}}" style="right: 0; width: 600px; padding: 44px 36px 110px; gap: 4px; border-left: 1px solid rgba(255,255,255,.1)" aria-label="Manage">
+        <h2 style="margin: 0 0 18px 6px; font: 800 34px/1.1 Manrope, sans-serif; letter-spacing: -.6px; color: #fff">Manage {{game.n}}</h2>
+        <sc-for list="{{manageItems}}" as="mg" hint-placeholder-count="8">
+          <sc-if value="{{mg.sep}}" hint-placeholder-val="{{ false }}"><div class="bp-sep"></div></sc-if>
+          <div class="{{mg.cls}}">{{mg.name}}<span class="bp-row__end">{{mg.end}}</span></div>
+        </sc-for>
+      </aside>
+    </sc-if>
+
+    <sc-if value="{{isConfirm}}" hint-placeholder-val="{{ false }}">
+      <div class="bp-dim {{inConfirm}}" style="z-index: 3"></div>
+      <div class="dlg {{inConfirm}}" style="width: 900px" role="alertdialog" aria-label="{{cfTitle}}">
+        <h2>{{cfTitle}}</h2>
+        <p>{{cfText}}</p>
+        <sc-if value="{{cfIsDelete}}" hint-placeholder-val="{{ true }}">
+          <div class="bp-group" style="padding: 8px 4px; display: flex; flex-direction: column">
+            <div class="bp-row" style="height: 56px; font-weight: 500">Mac app<span class="bp-row__end">4.2 GB</span></div>
+            <div class="bp-row" style="height: 56px; font-weight: 500">iPhone and iPad app<span class="bp-row__end">3.9 GB</span></div>
+            <div class="bp-row" style="height: 56px; font-weight: 500">Build folder<span class="bp-row__end">11.6 GB</span></div>
+            <div class="bp-row" style="height: 56px; font-weight: 500">Game log<span class="bp-row__end">2 MB</span></div>
+          </div>
+          <div class="{{cfSwitchCls}}" style="height: 72px">Also delete saves<span class="bp-spacer"></span><span class="bp-switch" aria-checked="{{cfSavesOn}}"></span></div>
+        </sc-if>
+        <p style="font-size: 19px">{{cfNote}}</p>
+        <div style="display: flex; gap: 20px; justify-content: flex-end; margin-top: 12px">
+          <sc-for list="{{cfBtns}}" as="cf" hint-placeholder-count="2"><span class="{{cf.cls}}" style="background: {{cf.bg}}">{{cf.label}}</span></sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{hasToast}}" hint-placeholder-val="{{ false }}">
+      <div class="toast" role="status">{{toast}}</div>
+    </sc-if>
+
+    <sc-if value="{{showHints}}" hint-placeholder-val="{{ true }}">
+      <footer class="bp-hints" style="z-index: 5">
+        <sc-for list="{{hintsLeft}}" as="h" hint-placeholder-count="2">
+          <span class="bp-hint"><span class="{{h.gcls}}" aria-label="{{h.name}}">{{h.g}}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display: {{h.svg}}"><path d="{{h.d}}"></path></svg></span>{{h.label}}</span>
+        </sc-for>
+        <span class="bp-spacer"></span>
+        <sc-for list="{{hintsRight}}" as="h" hint-placeholder-count="3">
+          <span class="bp-hint"><span class="{{h.gcls}}" aria-label="{{h.name}}">{{h.g}}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display: {{h.svg}}"><path d="{{h.d}}"></path></svg></span>{{h.label}}</span>
+        </sc-for>
+      </footer>
+    </sc-if>
+  </div>
+
+</template>
+<script>
+// A small stand-in for the design canvas runtime: {{path}} holes, sc-if, sc-for, and a DOM patch so CSS transitions still run.
+class DCLogic {
+  constructor(props) { this.props = props; }
+  setState(p) { Object.assign(this.state, typeof p === 'function' ? p(this.state) : p); schedule(); }
+}
+
+const G = [
+  {n:'[Game title]', art:'linear-gradient(125deg,#1f3a4d 0%,#3d6b5a 45%,#e0b660 100%)', st:'ready', sub:'Yesterday'},
+  {n:'[Game B]', art:'linear-gradient(140deg,#4a1f2c,#a8452f 60%,#f2a65a)', st:'ready', sub:'3 days ago'},
+  {n:'[Game C]', art:'linear-gradient(160deg,#16243f,#2f5f8f 55%,#9fd0e0)', st:'building', sub:'Update 1.1 is compiling'},
+  {n:'[Game D]', art:'linear-gradient(130deg,#2a2a1e,#6b7a3a 55%,#d8d08a)', st:'ready', sub:'Last week'},
+  {n:'[Game E]', art:'linear-gradient(150deg,#3a1d3f,#7a3e5c 50%,#e8a0a0)', st:'ready', sub:'Last month'},
+  {n:'[Game F]', art:'linear-gradient(120deg,#102a2a,#1f6b66 55%,#7fd6b8)', st:'unbuilt', sub:'Never played'},
+  {n:'[Game G]', art:'linear-gradient(135deg,#3b2a5c 0%,#b4553c 55%,#f0b45a 100%)', st:'ready', sub:'Two months ago'},
+  {n:'[Game H]', art:'linear-gradient(160deg,rgba(255,240,214,.42) 0%,#1a1a1c 60%,#0e0e0f 100%)', st:'data', sub:'Never played'},
+  {n:'[Game I]', art:'linear-gradient(140deg,#1d2b1f,#3f6a3a 55%,#b8d68a)', st:'ready', sub:'Last year'},
+  {n:'[Game J]', art:'linear-gradient(125deg,#2c1f14,#7a4a26 55%,#e6b98a)', st:'unbuilt', sub:'Never played'},
+  {n:'[Game K]', art:'linear-gradient(150deg,#14202e,#2e4a6b 55%,#c0d4e8)', st:'ready', sub:'Last year'},
+  {n:'[Game L]', art:'linear-gradient(130deg,#30182a,#6a2f4f 55%,#d88aa8)', st:'ready', sub:'Last year'},
+  {n:'[Game M]', art:'linear-gradient(120deg,#1b2a1b,#4f6b2f 55%,#d8e08a)', st:'ready', sub:'Last year'},
+  {n:'[Game N]', art:'linear-gradient(145deg,#2a1f12,#8a5a20 55%,#f0c870)', st:'unbuilt', sub:'Never played'},
+  {n:'[Game O]', art:'linear-gradient(160deg,#101820,#24485a 55%,#88c0c8)', st:'ready', sub:'Last year'}
+];
+const ST = {ready:['Ready on Mac','bp-eyebrow','nx-status nx-status--ready'], building:['Compiling 62%','bp-eyebrow bp-eyebrow--building','nx-status nx-status--building'], unbuilt:['Not compiled yet','bp-eyebrow bp-eyebrow--unbuilt','nx-status nx-status--unbuilt'], data:['Needs game data','bp-eyebrow bp-eyebrow--building','nx-status nx-status--building']};
+const FILTERS = [
+  {name:'All', fn:() => true}, {name:'Ready on Mac', fn:(g) => g.st === 'ready'}, {name:'Not compiled', fn:(g) => g.st === 'unbuilt' || g.st === 'building'},
+  {name:'Needs game data', fn:(g) => g.st === 'data'}
+];
+const MAIN = [
+  {name:'Home', go:'home', d:'M4 11l8-7 8 7v9h-5v-6H9v6H4z'},
+  {name:'Library', go:'library', d:'M6 8h12a4 4 0 0 1 4 4v2a3 3 0 0 1-5.4 1.8L15 14H9l-1.6 1.8A3 3 0 0 1 2 14v-2a4 4 0 0 1 4-4z', end:'15'},
+  {name:'Builds', go:'builds', d:'M3 7.5L12 3l9 4.5v9L12 21l-9-4.5zM3 7.5l9 4.5 9-4.5M12 12v9', end:'1 running'},
+  {name:'Search', go:'search', d:'M16 16l4 4M11 17a6 6 0 1 1 0-12 6 6 0 0 1 0 12z'},
+  {name:'Settings', go:'settings', d:'M4 7h10M18 7h2M4 17h4M12 17h8'},
+  {name:'Back to the desktop', toast:'This would return to the desktop launcher.', sep:true, d:'M3 4h18v13H3zM8 21h8M12 17v4'},
+  {name:'Quit NX2Apple', toast:'This would quit NX2Apple.', d:'M12 3v9M6.3 6.8a8 8 0 1 0 11.4 0', danger:true}
+];
+const GLYPHS = {
+  xbox: {a:'A', b:'B', x:'X', y:'Y', l:'LB', r:'RB', plus:'Menu', minus:'View', home:'Xbox'},
+  ps: {a:'✕', b:'○', x:'□', y:'△', l:'L1', r:'R1', plus:'Options', minus:'Create', home:'PS'},
+  nintendo: {a:'A', b:'B', x:'X', y:'Y', l:'L', r:'R', plus:'+', minus:'−', home:'Home'}
+};
+const HOME_NAME = {xbox: 'the Xbox button', ps: 'the PS button', nintendo: 'the Home button'};
+const FACE_POS = {
+  xbox: {a:[2,3], b:[3,2], x:[1,2], y:[2,1]}, ps: {a:[2,3], b:[3,2], x:[1,2], y:[2,1]}, nintendo: {a:[3,2], b:[2,3], x:[2,1], y:[1,2]}
+};
+const ROWS = [[0, 1, 2, 3, 4, -1], [6, 8, 10, 11, 12, 14], [5, 7, 9, 13]];
+const ROW_TITLES = ['Continue playing', 'Ready to play', 'Needs attention'];
+const GAME_TABS = ['Overview', 'Saves', 'Build', 'Cheats'];
+const TAB_CARDS = [
+  [{label: 'Launch options', value: 'Full screen · 1440p · 60 fps', note: '2 changed from the defaults'}, {label: 'Controllers', value: '2 players · By label', note: 'P2 battery at 12%'}, {label: 'Version', value: '1.2.0', note: 'Update included'}],
+  [{label: 'Cloud saves', value: 'In step with the cloud', note: 'Last session, yesterday at 22:14'}, {label: 'Folder', value: 'iCloud Drive › NX2Apple Saves', note: 'Change it on the desktop'}],
+  [{label: 'Mac', value: 'Compiled 3 days ago', note: 'Apple silicon · signed'}, {label: 'iPhone', value: 'Not compiled', note: 'Compile it on the desktop'}],
+  [{label: 'Active cheats', value: '2 of 14', note: 'Applied at the next start'}]
+];
+const ICON_ACTS = [
+  {label: 'Controls', sw: 1.7, d: 'M6 8h12a4 4 0 0 1 4 4v2a3 3 0 0 1-5.4 1.8L15 14H9l-1.6 1.8A3 3 0 0 1 2 14v-2a4 4 0 0 1 4-4zM7 10.5v3M5.5 12h3'},
+  {label: 'Launch options', sw: 1.7, d: 'M4 7h10M18 7h2M4 17h4M12 17h8M16 5v4M10 15v4'},
+  {label: 'Manage', sw: 3, d: 'M5 12h.01M12 12h.01M19 12h.01'}
+];
+const LO = [
+  {n: 'Display mode', vals: ['Window', 'Full screen'], def: 1, note: 'Full screen hides the menu bar and the Dock while you play.'},
+  {n: 'Render scale', vals: ['50%', '75%', '100%', '125%', '150%', '200%'], def: 2, note: 'Draws the game larger or smaller, then fits it to the screen. Above 100% is sharper and harder on the Mac.'},
+  {n: 'Frame rate', vals: ['30 fps', '60 fps'], def: 0, note: '60 fps doubles the game speed in games that tie their speed to the frame rate.'},
+  {n: 'Picture', vals: ['Fit to screen', 'Fill the screen', 'Stretch'], def: 0, note: 'How the picture fits a screen of another shape.'},
+  {n: 'Console mode', vals: ['Handheld', 'Docked'], def: 1, note: 'Docked renders at the console’s TV resolution.'},
+  {n: 'Game language', vals: ['English', 'French', 'German', 'Italian', 'Spanish', 'Japanese', 'Chinese'], def: 0, note: 'Only languages the game ships with.'},
+  {n: 'Dynamic resolution', vals: ['Off', 'On'], def: 0, note: 'Lowers the resolution when the game is late.', needs: (v) => v[1] === 2, off: 'Only with Render scale at 100%'}
+];
+const MANAGE = [
+  {name: 'Compile again', end: 'Mac and iPhone', toast: '%g is compiling again. Follow it in Builds.'},
+  {name: 'Saves', tab: 1}, {name: 'Cheats', tab: 3}, {name: 'Change artwork', toast: 'The artwork picker is not drawn yet.'},
+  {name: 'Show in Finder', end: 'On the desktop', sep: true, toast: 'This would switch to the desktop and show %g in Finder.'},
+  {name: 'Show log', end: 'On the desktop', toast: 'This would switch to the desktop and open the game log.'},
+  {name: 'Remove from collection', sep: true, confirm: 'remove'}, {name: 'Delete game…', danger: true, confirm: 'delete'}
+];
+const CHEATS = ['Run cheats in the game', 'Infinite health', 'Max money', 'Moon jump', 'Unlock all outfits'];
+const GLYPH_OPTS = ['Match the controller', 'Xbox', 'PlayStation', 'Nintendo'];
+const KB = [['q','w','e','r','t','y','u','i','o','p'], ['a','s','d','f','g','h','j','k','l'], ['z','x','c','v','b','n','m','⌫'], ['space','Done']];
+const SORTS = ['Recently played', 'Name', 'Recently compiled', 'Size on disk'];
+const BUILD_ROWS = [
+  {sec: 'Compiling now', id: 2, sub: 'Update 1.1 · Mac', running: true},
+  {sec: 'Waiting', id: 13, sub: 'Mac · starts after [Game C]'},
+  {sec: 'Recent', id: 1, sub: 'Mac and iPhone · 3 days ago · 11 min', status: 'Compiled', scls: 'nx-status nx-status--ready'},
+  {sec: '', id: 5, sub: 'Mac · yesterday · the game data is incomplete', status: 'Stopped at step 2', scls: 'nx-status nx-status--building'}
+];
+const LAYOUTS = [
+  {name: 'Auto', note: 'Picks By label for this controller'}, {name: 'Standard', note: 'By position, as on the console'},
+  {name: 'By label', note: 'Each letter sends the same letter'}, {name: 'Custom', note: 'Choose what each button sends'}
+];
+const KEYCAPS = {a: 'return', b: 'esc', x: 'X', y: 'Y', l: 'Q', r: 'E', plus: 'M', minus: 'V', home: 'H'};
+const INIT = {screen:'home', query:'', kbRow:0, kbCol:0, searchZone:'kb', resIdx:0, searchFrom:'home', buildIdx:0, buildStopped:false, ctlIdx:2, ctlLayout:2, ctlPlayer:0, optIdx:0, sortIdx:0, showNames:true, showIphone:true, topFocus:false, gameTab:0, gameZone:'actions', cardIdx:0, input:'pad', layer:null, homeRow:0, homeCols:[0, 0, 0], zone:'grid', filterIdx:0, activeFilter:0, libIdx:0, gameId:0, gameIdx:0, from:'home', mainIdx:0, quickIdx:0, merge:false, fps:true, family:'xbox', toast:null, bump:null, shaders:0, stage:'compile', loVals:[1, 4, 1, 0, 1, 0, 0], loIdx:0, loZone:'rows', loSide:0, mgIdx:0, confirmKind:'delete', cfIdx:1, cfSaves:false, setIdx:1, setSw:[true, true, true], glyphIdx:0, setFrom:'home', crIdx:0, cheats:[true, true, true, false], chIdx:0};
+
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = Object.assign({}, INIT); }
+  componentDidMount() {
+    // A real controller through the browser's Gamepad API (standard mapping, read by position). Confirm is the bottom button on
+    // Xbox and PlayStation pads and the right one, printed A, on a Nintendo pad, as in the launcher (Gamepad.swift).
+    this.padPrev = {}; this.padNext = {};
+    const DIRS = {up: 1, down: 1, left: 1, right: 1};
+    const poll = () => {
+      this.raf = requestAnimationFrame(poll);
+      let pads;
+      try { pads = navigator.getGamepads ? navigator.getGamepads() : []; }
+      catch (e) {
+        if (!this.padBlocked) { this.padBlocked = true; this.setState({toast: 'This view cannot read controllers. Use the keyboard.'}); }
+        return;
+      }
+      const p = Array.prototype.find.call(pads || [], (x) => x && x.connected);
+      if (!p) { if (this.padName) { this.padName = null; this.setState({toast: 'Controller disconnected.'}); } this.padPrev = {}; return; }
+      if (this.padName !== p.id) { this.padName = p.id; this.setState({toast: 'Controller connected: ' + p.id.replace(/\s*\(.*$/, '').slice(0, 40)}); }
+      const sw = this.props.family === 'nintendo';
+      const b = (i) => !!(p.buttons[i] && p.buttons[i].pressed);
+      const ax = p.axes || [];
+      const cur = {
+        a: b(sw ? 1 : 0), b: b(sw ? 0 : 1), x: b(sw ? 3 : 2), y: b(sw ? 2 : 3), l: b(4), r: b(5), minus: b(8), plus: b(9), home: b(16),
+        up: b(12) || ax[1] < -0.5, down: b(13) || ax[1] > 0.5, left: b(14) || ax[0] < -0.5, right: b(15) || ax[0] > 0.5
+      };
+      const now = performance.now();
+      Object.keys(cur).forEach((k) => {
+        if (cur[k] && !this.padPrev[k]) { if (this.state.input !== 'pad') this.setState({input: 'pad'}); this.press(k); this.padNext[k] = now + 400; }
+        else if (cur[k] && DIRS[k] && now >= this.padNext[k]) { this.press(k); this.padNext[k] = now + 120; }
+      });
+      this.padPrev = cur;
+    };
+    this.raf = requestAnimationFrame(poll);
+  }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); clearTimeout(this.iv); clearInterval(this.iv); clearTimeout(this.bt); }
+
+  set(n) {
+    const s = this.state;
+    if (n.screen && n.screen !== s.screen) n.entering = this.lastKey === 'b' ? 'back' : 'fwd';
+    if (n.layer && n.layer !== s.layer && !(s.layer === 'confirm' && n.layer === 'manage')) n.layerIn = n.layer;
+    this.setState(n);
+    if (n.entering || n.layerIn) { clearTimeout(this.et); this.et = setTimeout(() => this.setState({entering: null, layerIn: null}), 40); }
+    if (n.bump) { clearTimeout(this.bt); this.bt = setTimeout(() => this.setState({bump: null}), 170); }
+  }
+  visible(af) {
+    const list = G.map((g, i) => Object.assign({i: i}, g)).filter(FILTERS[af].fn);
+    const si = this.state.sortIdx;
+    if (si === 1) list.sort((a, b) => a.n.localeCompare(b.n));
+    else if (si === 2) list.reverse();
+    else if (si === 3) list.sort((a, b) => ((a.i * 7) % 15) - ((b.i * 7) % 15));
+    return list;
+  }
+  searchResults(q) {
+    const t = q.trim().toLowerCase();
+    if (!t) return [];
+    return G.map((g, i) => Object.assign({i: i}, g)).filter((g) => g.n.toLowerCase().replace(/[\[\]]/g, '').indexOf(t) >= 0);
+  }
+  openSearch(from, n) { n.screen = 'search'; n.searchFrom = from; n.query = ''; n.kbRow = 0; n.kbCol = 0; n.searchZone = 'kb'; n.resIdx = 0; n.layer = null; }
+  homeList(r) { return ROWS[r === undefined ? this.state.homeRow : r]; }
+  play(id, n) {
+    const g = G[id];
+    if (g.st !== 'ready') { n.toast = g.n + ': ' + ST[g.st][0] + '. Compile it before playing.'; return; }
+    this.startGame(id); n.screen = 'starting'; n.gameId = id; n.shaders = 0; n.stage = 'compile'; n.layer = null;
+  }
+  startGame(id) {
+    clearInterval(this.iv); clearTimeout(this.iv);
+    this.iv = setInterval(() => {
+      const sh = this.state.shaders + 70;
+      if (sh >= 3860) {
+        clearInterval(this.iv);
+        this.setState({shaders: 3860, stage: 'open'});
+        this.iv = setTimeout(() => { if (this.state.screen === 'starting') this.setState({screen: 'ingame'}); }, 900);
+      } else this.setState({shaders: sh});
+    }, 60);
+  }
+  openGame(id, from, n) { n.screen = 'game'; n.gameId = id; n.from = from; n.gameIdx = 0; n.gameTab = 0; n.gameZone = 'actions'; n.cardIdx = 0; }
+
+  press(k) {
+    this.lastKey = k;
+    const s = this.state, n = {toast: null};
+    if (s.screen === 'ingame') {
+      if (k === 'home') { n.screen = 'game'; n.gameIdx = 0; n.toast = 'The game quit. You are back on its page.'; }
+      else if (k === 'x') { n.screen = 'crashed'; n.crIdx = 0; n.cheats = [false].concat(s.cheats.slice(1)); }
+      else n.toast = 'The game has the controller now. Press ' + HOME_NAME[this.props.family || 'xbox'] + ' to quit it.';
+      return this.set(n);
+    }
+    if (k === 'home') { n.toast = 'Outside a game, the ' + HOME_NAME[this.props.family || 'xbox'].replace(/^the /, '') + ' belongs to the system.'; return this.set(n); }
+    if (s.screen === 'starting') {
+      if (k === 'b') { clearInterval(this.iv); clearTimeout(this.iv); n.screen = 'game'; n.gameIdx = 0; n.toast = 'Start cancelled.'; }
+      return this.set(n);
+    }
+    if (s.layer === 'confirm') {
+      const del = s.confirmKind === 'delete', i = s.cfIdx;
+      if (k === 'up') { if (del && i > 0) n.cfIdx = 0; else n.bump = 'up'; }
+      else if (k === 'down') { if (i === 0) n.cfIdx = 1; else n.bump = 'down'; }
+      else if (k === 'left') { if (i === 2) n.cfIdx = 1; else n.bump = 'left'; }
+      else if (k === 'right') { if (i === 1) n.cfIdx = 2; else n.bump = 'right'; }
+      else if (k === 'b') n.layer = 'manage';
+      else if (k === 'a') {
+        if (i === 0) n.cfSaves = !s.cfSaves;
+        else if (i === 1) n.layer = 'manage';
+        else {
+          n.layer = null; n.screen = s.from; if (s.from === 'search') n.searchZone = 'results';
+          n.toast = G[s.gameId].n + (del ? (s.cfSaves ? ' and its saves went to the Trash' : ' went to the Trash. Its saves stay') : ' left the collection. It stays on this Mac') + ' (not really: prototype).';
+        }
+      }
+      return this.set(n);
+    }
+    if (s.layer === 'manage') {
+      const i = s.mgIdx, it = MANAGE[i];
+      if (k === 'up') { if (i === 0) n.bump = 'up'; else n.mgIdx = i - 1; }
+      else if (k === 'down') { if (i === MANAGE.length - 1) n.bump = 'down'; else n.mgIdx = i + 1; }
+      else if (k === 'b') n.layer = null;
+      else if (k === 'a') {
+        if (it.tab !== undefined) { n.layer = null; n.gameTab = it.tab; n.gameZone = 'cards'; n.cardIdx = 0; n.chIdx = 0; }
+        else if (it.confirm) { n.layer = 'confirm'; n.confirmKind = it.confirm; n.cfIdx = 1; n.cfSaves = false; }
+        else n.toast = it.toast.replace('%g', G[s.gameId].n);
+      }
+      return this.set(n);
+    }
+    if (s.screen === 'launchopts' && !s.layer && k !== 'plus' && k !== 'minus') {
+      if (k === 'x') { this.play(s.gameId, n); return this.set(n); }
+      if (s.loZone === 'side') {
+        const i = s.loSide;
+        if (k === 'up') { if (i === 0) n.bump = 'up'; else n.loSide = i - 1; }
+        else if (k === 'down') { if (i === 3) n.bump = 'down'; else n.loSide = i + 1; }
+        else if (k === 'right' || (k === 'a' && i === 0)) n.loZone = 'rows';
+        else if (k === 'a' && i === 3) { n.loVals = LO.map((o) => o.def); n.toast = 'Back to the tested defaults.'; }
+        else if (k === 'a') n.toast = (i === 1 ? 'Advanced settings are' : 'Mods are') + ' not drawn yet.';
+        else if (k === 'b') n.screen = 'game';
+        else if (k === 'left') n.bump = 'left';
+      } else {
+        const i = s.loIdx, o = LO[i], v = s.loVals.slice(), off = o.needs && !o.needs(s.loVals);
+        const step = (d) => { if (off) { n.toast = o.off + '.'; return; } const nv = v[i] + d; if (nv < 0 || nv >= o.vals.length) n.bump = d < 0 ? 'left' : 'right'; else { v[i] = nv; n.loVals = v; } };
+        if (k === 'up') { if (i === 0) n.bump = 'up'; else n.loIdx = i - 1; }
+        else if (k === 'down') { if (i === LO.length - 1) n.bump = 'down'; else n.loIdx = i + 1; }
+        else if (k === 'left') step(-1);
+        else if (k === 'right') step(1);
+        else if (k === 'a') { if (off) n.toast = o.off + '.'; else { v[i] = (v[i] + 1) % o.vals.length; n.loVals = v; } }
+        else if (k === 'y') { if (v[i] === o.def) n.toast = o.n + ' is at its tested default.'; else { v[i] = o.def; n.loVals = v; } }
+        else if (k === 'b') { n.loZone = 'side'; n.loSide = 0; }
+      }
+      return this.set(n);
+    }
+    if (s.screen === 'settings' && !s.layer && k !== 'plus' && k !== 'minus') {
+      const i = s.setIdx;
+      if (k === 'up') { if (i === 0) n.bump = 'up'; else n.setIdx = i - 1; }
+      else if (k === 'down') { if (i === 5) n.bump = 'down'; else n.setIdx = i + 1; }
+      else if (k === 'b') n.screen = s.setFrom;
+      else if (i === 4 && (k === 'a' || k === 'left' || k === 'right')) n.glyphIdx = (s.glyphIdx + (k === 'left' ? 3 : 1)) % 4;
+      else if (k === 'a') {
+        if (i === 0) n.toast = 'This would open Game Controllers in System Settings.';
+        else if (i <= 3) { const sw = s.setSw.slice(); sw[i - 1] = !sw[i - 1]; n.setSw = sw; }
+        else n.toast = 'This would return to the desktop launcher.';
+      } else if (k === 'left' || k === 'right') n.bump = k;
+      return this.set(n);
+    }
+    if (s.screen === 'crashed' && !s.layer && k !== 'plus' && k !== 'minus') {
+      const i = s.crIdx;
+      if (k === 'left') { if (i === 0) n.bump = 'left'; else n.crIdx = 0; }
+      else if (k === 'right') { if (i === 1) n.bump = 'right'; else n.crIdx = 1; }
+      else if (k === 'a' && i === 0) this.play(s.gameId, n);
+      else if (k === 'a' || k === 'b') { n.screen = 'game'; n.gameIdx = 0; n.gameZone = 'actions'; }
+      else if (k === 'up' || k === 'down') n.bump = k;
+      return this.set(n);
+    }
+    if (s.screen === 'search' && !s.layer) {
+      const res = this.searchResults(s.query);
+      if (s.searchZone === 'results') {
+        const i = Math.min(s.resIdx, res.length - 1);
+        if (k === 'left') { if (i <= 0) n.bump = 'left'; else n.resIdx = i - 1; }
+        else if (k === 'right') { if (i >= res.length - 1) n.bump = 'right'; else n.resIdx = i + 1; }
+        else if (k === 'down' || k === 'b') n.searchZone = 'kb';
+        else if (k === 'up') n.bump = 'up';
+        else if (k === 'a' && res.length) this.openGame(res[i].i, 'search', n);
+        else if (k === 'x' && res.length) this.play(res[i].i, n);
+        return this.set(n);
+      }
+      const r = s.kbRow, c = Math.min(s.kbCol, KB[r].length - 1);
+      const type = (key) => {
+        if (key === '⌫') n.query = s.query.slice(0, -1);
+        else if (key === 'space') n.query = s.query + ' ';
+        else if (key === 'Done') { if (res.length) { n.searchZone = 'results'; n.resIdx = 0; } else n.toast = s.query ? 'No game matches “' + s.query.trim() + '”.' : 'Type a few letters first.'; }
+        else n.query = s.query + key;
+      };
+      if (k === 'left') { if (c === 0) n.bump = 'left'; else n.kbCol = c - 1; }
+      else if (k === 'right') { if (c === KB[r].length - 1) n.bump = 'right'; else n.kbCol = c + 1; }
+      else if (k === 'up') { if (r === 0) { if (res.length) { n.searchZone = 'results'; n.resIdx = 0; } else n.bump = 'up'; } else { n.kbRow = r - 1; n.kbCol = Math.min(c, KB[r - 1].length - 1); } }
+      else if (k === 'down') { if (r === KB.length - 1) n.bump = 'down'; else { n.kbRow = r + 1; n.kbCol = Math.min(c, KB[r + 1].length - 1); } }
+      else if (k === 'a') type(KB[r][c]);
+      else if (k === 'x') type('⌫');
+      else if (k === 'y') type('space');
+      else if (k === 'plus') type('Done');
+      else if (k === 'b') n.screen = s.searchFrom;
+      else if (k === 'l' || k === 'r') n.bump = k === 'l' ? 'left' : 'right';
+      return this.set(n);
+    }
+    if (s.layer === 'libopts') {
+      const i = s.optIdx;
+      if (k === 'up') { if (i === 0) n.bump = 'up'; else n.optIdx = i - 1; }
+      else if (k === 'down') { if (i === 5) n.bump = 'down'; else n.optIdx = i + 1; }
+      else if (k === 'b' || k === 'y') n.layer = null;
+      else if (k === 'a') {
+        if (i < 4) { n.sortIdx = i; n.libIdx = 0; }
+        else if (i === 4) n.showIphone = !s.showIphone;
+        else n.showNames = !s.showNames;
+      }
+      return this.set(n);
+    }
+    if (s.screen === 'builds' && !s.layer && k !== 'plus' && k !== 'minus') {
+      const i = s.buildIdx;
+      if (k === 'up') { if (i === 0) n.bump = 'up'; else n.buildIdx = i - 1; }
+      else if (k === 'down') { if (i === BUILD_ROWS.length - 1) n.bump = 'down'; else n.buildIdx = i + 1; }
+      else if (k === 'x' && i === 0 && !s.buildStopped) { n.buildStopped = true; n.toast = 'Compile stopped. Nothing was changed on your Mac.'; }
+      else if (k === 'a') n.toast = 'Build details are not drawn yet.';
+      else if (k === 'b') n.screen = 'home';
+      else if (k === 'left' || k === 'right') n.bump = k;
+      return this.set(n);
+    }
+    if (s.screen === 'controls' && !s.layer && k !== 'plus' && k !== 'minus') {
+      const i = s.ctlIdx;
+      if (k === 'up') { if (i === 0) n.bump = 'up'; else n.ctlIdx = i - 1; }
+      else if (k === 'down') { if (i === 4) n.bump = 'down'; else n.ctlIdx = i + 1; }
+      else if (k === 'a') { if (i < 4) n.ctlLayout = i; else n.merge = !s.merge; }
+      else if (k === 'l' || k === 'r') { const np = s.ctlPlayer + (k === 'l' ? -1 : 1); if (np < 0 || np > 1) n.bump = k === 'l' ? 'left' : 'right'; else n.ctlPlayer = np; }
+      else if (k === 'b') n.screen = 'game';
+      return this.set(n);
+    }
+    if (k === 'plus' || k === 'minus') {
+      const want = k === 'plus' ? 'main' : 'quick';
+      n.layer = s.layer === want ? null : want;
+      if (want === 'main') n.mainIdx = s.screen === 'library' || (s.screen === 'game' && s.from === 'library') ? 1 : 0;
+      if (want === 'quick') n.quickIdx = 0;
+      return this.set(n);
+    }
+    if (s.layer === 'main' || s.layer === 'quick') {
+      const key = s.layer === 'main' ? 'mainIdx' : 'quickIdx', max = s.layer === 'main' ? MAIN.length - 1 : 4, i = s[key];
+      if (k === 'up') { if (i === 0) n.bump = 'up'; else n[key] = i - 1; }
+      else if (k === 'down') { if (i === max) n.bump = 'down'; else n[key] = i + 1; }
+      else if (k === 'b') n.layer = null;
+      else if (k === 'a' && s.layer === 'main') {
+        const it = MAIN[i];
+        if (it.go === 'search') this.openSearch(s.screen === 'search' ? s.searchFrom : (s.screen === 'game' ? 'home' : s.screen), n);
+        else if (it.go) { if (it.go === 'settings' && s.screen !== 'settings') { n.setFrom = s.screen; n.setIdx = 1; } n.screen = it.go; n.layer = null; if (it.go === 'library') n.zone = 'grid'; if (it.go === 'builds') n.buildIdx = 0; } else n.toast = it.toast;
+      } else if (k === 'a') {
+        if (i === 0) n.toast = 'P1 rumbles and its light blinks.';
+        else if (i === 1) n.toast = 'P2 rumbles and its light blinks.';
+        else if (i === 2) n.toast = 'Press a button on the controller that should be player 3.';
+        else if (i === 3) n.merge = !s.merge;
+        else n.fps = !s.fps;
+      } else if (k === 'l' || k === 'r') n.toast = s.layer === 'quick' ? 'The other tabs are not drawn yet.' : null;
+      return this.set(n);
+    }
+    // L, R and Y keep working while Search in the top bar has the focus
+    if (s.topFocus && (s.screen === 'home' || s.screen === 'library') && ['l', 'r', 'y'].indexOf(k) < 0) {
+      if (k === 'down' || k === 'b') n.topFocus = false;
+      else if (k === 'a') this.openSearch(s.screen, n);
+      else if (k === 'left' || k === 'right' || k === 'up') n.bump = k;
+      return this.set(n);
+    }
+    if (k === 'y' && s.screen === 'library') { n.layer = 'libopts'; n.optIdx = s.sortIdx; return this.set(n); }
+    if (k === 'y' && s.screen === 'home') { this.openSearch('home', n); return this.set(n); }
+    if (k === 'l' || k === 'r') {
+      const d = k === 'l' ? -1 : 1;
+      if (s.screen === 'game') {
+        const nt = s.gameTab + d;
+        if (nt < 0 || nt >= GAME_TABS.length) n.bump = d < 0 ? 'left' : 'right'; else { n.gameTab = nt; n.cardIdx = 0; if (s.gameZone === 'cards') n.cardIdx = 0; }
+      } else if (s.screen === 'library') {
+        const nf = s.activeFilter + d;
+        if (nf < 0 || nf >= FILTERS.length) n.bump = d < 0 ? 'left' : 'right';
+        else { n.activeFilter = nf; n.libIdx = 0; n.zone = 'grid'; n.topFocus = false; }
+      }
+      return this.set(n);
+    }
+    if (s.screen === 'home') {
+      const r = s.homeRow, i = s.homeCols[r], row = ROWS[r];
+      const setCol = (v) => { const c = s.homeCols.slice(); c[r] = v; n.homeCols = c; };
+      if (k === 'left') { if (i === 0) n.bump = 'left'; else setCol(i - 1); }
+      else if (k === 'right') { if (i === row.length - 1) n.bump = 'right'; else setCol(i + 1); }
+      else if (k === 'up') { if (r === 0) n.topFocus = true; else n.homeRow = r - 1; }
+      else if (k === 'down') { if (r === ROWS.length - 1) n.bump = 'down'; else n.homeRow = r + 1; }
+      else if (k === 'a' && row[i] < 0) { n.screen = 'library'; n.zone = 'grid'; }
+      else if (k === 'a') this.openGame(row[i], 'home', n);
+      else if (k === 'x' && row[i] >= 0) this.play(row[i], n);
+    } else if (s.screen === 'library') {
+      const vis = this.visible(s.activeFilter), len = vis.length;
+      if (s.zone === 'filters') {
+        const i = s.filterIdx;
+        if (k === 'left') { if (i === 0) n.bump = 'left'; else n.filterIdx = i - 1; }
+        else if (k === 'right') { if (i === FILTERS.length - 1) n.bump = 'right'; else n.filterIdx = i + 1; }
+        else if (k === 'up') n.bump = 'up';
+        else if (k === 'down') { if (len) n.zone = 'grid'; else n.bump = 'down'; }
+        else if (k === 'a') {
+          if (FILTERS[i].fn) { n.activeFilter = i; n.libIdx = 0; }
+          else n.toast = 'Sorting is not drawn yet.';
+        } else if (k === 'b') n.screen = 'home';
+      } else {
+        const i = Math.min(s.libIdx, len - 1), col = i % 5;
+        if (k === 'left') { if (col === 0) n.bump = 'left'; else n.libIdx = i - 1; }
+        else if (k === 'right') { if (col === 4 || i + 1 >= len) n.bump = 'right'; else n.libIdx = i + 1; }
+        else if (k === 'up') { if (i < 5) n.topFocus = true; else n.libIdx = i - 5; }
+        else if (k === 'down') {
+          if (i + 5 < len) n.libIdx = i + 5;
+          else if (Math.floor(i / 5) < Math.floor((len - 1) / 5)) n.libIdx = len - 1;
+          else n.bump = 'down';
+        }
+        else if (k === 'a' && len) this.openGame(vis[i].i, 'library', n);
+        else if (k === 'x' && len) this.play(vis[i].i, n);
+        else if (k === 'b') n.screen = 'home';
+      }
+    } else if (s.screen === 'game') {
+      const i = s.gameIdx, acts = this.actions(G[s.gameId]);
+      const cards = TAB_CARDS[s.gameTab];
+      if (s.gameZone === 'cards' && s.gameTab === 3) {
+        const c = s.chIdx;
+        if (k === 'up') { if (c === 0) n.gameZone = 'actions'; else n.chIdx = c - 1; }
+        else if (k === 'down') { if (c === CHEATS.length - 1) n.bump = 'down'; else n.chIdx = c + 1; }
+        else if (k === 'left' || k === 'right') n.bump = k;
+        else if (k === 'b') { n.screen = s.from; if (s.from === 'search') n.searchZone = 'results'; }
+        else if (k === 'a') {
+          if (c === 4) n.toast = 'This cheat is malformed and will not run. Fix its file on the desktop.';
+          else { const ch = s.cheats.slice(); ch[c] = !ch[c]; n.cheats = ch; n.toast = 'Saved. It applies the next time the game starts.'; }
+        }
+      }
+      else if (s.gameZone === 'cards') {
+        const c = s.cardIdx;
+        if (k === 'left') { if (c === 0) n.bump = 'left'; else n.cardIdx = c - 1; }
+        else if (k === 'right') { if (c === cards.length - 1) n.bump = 'right'; else n.cardIdx = c + 1; }
+        else if (k === 'up') n.gameZone = 'actions';
+        else if (k === 'down') n.bump = 'down';
+        else if (k === 'b') { n.screen = s.from; if (s.from === 'search') n.searchZone = 'results'; }
+        else if (k === 'a') {
+          if (s.gameTab === 0 && c === 0) { n.screen = 'launchopts'; n.loZone = 'rows'; n.loIdx = 0; }
+          else if (s.gameTab === 0 && c === 1) { n.screen = 'controls'; n.ctlIdx = s.ctlLayout; }
+          else if (s.gameTab === 1 && c === 0) n.toast = 'Saves sync by themselves when the game starts and quits.';
+          else if (s.gameTab === 1) n.toast = 'This would switch to the desktop to choose another folder.';
+          else n.toast = cards[c].label + ' details are not drawn yet.';
+        }
+      }
+      else if (k === 'down') { n.gameZone = 'cards'; n.cardIdx = 0; n.chIdx = 0; }
+      else if (k === 'left') { if (i === 0) n.bump = 'left'; else n.gameIdx = i - 1; }
+      else if (k === 'right') { if (i === acts.length - 1) n.bump = 'right'; else n.gameIdx = i + 1; }
+      else if (k === 'up' || k === 'down') n.bump = k;
+      else if (k === 'b') { n.screen = s.from; if (s.from === 'search') n.searchZone = 'results'; }
+      else if (k === 'a') {
+        if (i === 0 && G[s.gameId].st === 'ready') this.play(s.gameId, n);
+        else if (i === 1) { n.screen = 'controls'; n.ctlIdx = s.ctlLayout; }
+        else if (i === 2) { n.screen = 'launchopts'; n.loZone = 'rows'; n.loIdx = 0; }
+        else if (i === 3) { n.layer = 'manage'; n.mgIdx = 0; }
+        else n.toast = acts[i] + ' is not drawn yet.';
+      }
+    }
+    if (n.screen && n.screen !== s.screen) n.topFocus = false;
+    this.set(n);
+  }
+  actions(g) { return [g.st === 'ready' ? 'Play' : g.st === 'data' ? 'Add game data' : 'Compile'].concat(ICON_ACTS.map((a) => a.label)); }
+
+  renderVals() {
+    const s = this.state, fam = GLYPHS[this.props.family] ? this.props.family : 'xbox', keys = s.input === 'keys', gl = keys ? Object.assign({}, GLYPHS[fam], KEYCAPS) : GLYPHS[fam];
+    // Glyphs drawn as icons where the controller prints a symbol: the PlayStation shapes, Menu and View, Options and Create
+    const MENU_D = 'M5 7h14M5 12h14M5 17h14';
+    const ICON_D = {xbox: {plus: MENU_D, minus: 'M9 5h10v9H9zM5 9v10h10'},
+      ps: {plus: MENU_D, minus: 'M12 4v7M5.5 7l4 5M18.5 7l-4 5M8 19h8', a: 'M7 7l10 10M17 7L7 17', b: 'M12 5.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13z', x: 'M6.5 6.5h11v11h-11z', y: 'M12 5.2l7 12H5z'}};
+    const glyph = (key, padOnly) => { const k = keys && !padOnly, d = !k && ICON_D[fam] && ICON_D[fam][key]; const label = k ? gl[key] : GLYPHS[fam][key];
+      return {g: d ? '' : label, name: GLYPHS[fam][key], d: d || '', svg: d ? 'block' : 'none', cls: k ? 'bp-g bp-g--key' : 'bp-g' + (d ? ' bp-g--icon' : '')}; };
+    const glowOf = (art) => (art.match(/#[0-9a-fA-F]{6}/g) || ['#000000']).pop();
+    const bumpCls = (on) => on && s.bump ? ' bump-' + s.bump : '';
+    const hide = !!s.layer;
+    const heroId = ROWS[s.homeRow][s.homeCols[s.homeRow]];
+    const onAll = heroId < 0;
+    const hero = onAll ? {n: 'All games', art: 'linear-gradient(160deg,#2a2622,#1a1a1c 60%,#0e0e0f)', st: 'ready', sub: G.length + ' games in your library'} : Object.assign({}, G[heroId]);
+    hero.statusText = onAll ? 'Library' : ST[hero.st][0]; hero.eyebrowCls = onAll ? 'bp-eyebrow bp-eyebrow--unbuilt' : ST[hero.st][1];
+    const game = Object.assign({}, G[s.gameId]);
+    game.statusText = ST[game.st][0]; game.eyebrowCls = ST[game.st][1];
+
+    const homeRows = ROWS.map((ids, r) => ({
+      title: ROW_TITLES[r], count: ids.filter((x) => x >= 0).length + ' games', opacity: r < s.homeRow ? 0 : r === s.homeRow ? 1 : 0.55,
+      tiles: ids.map((id, i) => {
+        const f = !s.topFocus && r === s.homeRow && i === s.homeCols[r];
+        const g = id < 0 ? {n: 'All games', art: 'linear-gradient(160deg,rgba(255,240,214,.28) 0%,#1a1a1c 62%,#0e0e0f 100%)', st: 'ready', sub: G.length + ' games'} : G[id];
+        return {n: g.n, art: g.art, glow: glowOf(g.art), sub: g.st === 'ready' ? g.sub : ST[g.st][0], cls: 'bp-tile' + (f ? ' is-focus' : '') + bumpCls(f && !hide)};
+      })
+    }));
+    const homeScroll = s.homeRow * 403;
+    const vis = this.visible(s.activeFilter);
+    const li = Math.min(s.libIdx, vis.length - 1);
+    const libTiles = vis.map((g, i) => {
+      const f = !s.topFocus && s.zone === 'grid' && i === li;
+      const dim = g.st === 'unbuilt' ? '; filter: saturate(.35) brightness(.7)' : '';
+      return {n: g.n, art: g.art + dim, glow: glowOf(g.art), vis: Math.floor(i / 5) < Math.max(0, Math.floor(Math.max(li, 0) / 5) - 1) ? 'hidden' : 'visible', statusText: ST[g.st][0], statusCls: ST[g.st][2], cls: 'bp-tile' + (f ? ' is-focus' : '') + bumpCls(f && !hide)};
+    });
+    const libScroll = Math.max(0, Math.floor(Math.max(li, 0) / 5) - 1) * 276;
+    const filters = FILTERS.map((f, i) => {
+      const focus = s.zone === 'filters' && i === s.filterIdx;
+      return {name: f.name, count: G.filter(f.fn).length, active: i === s.activeFilter ? 'true' : 'false', cls: 'bp-filter' + (focus ? ' bp-focus' : '') + bumpCls(focus && !hide)};
+    });
+    const acts = this.actions(G[s.gameId]);
+    const onActs = s.gameZone !== 'cards';
+    const fcls = (i) => (onActs && i === s.gameIdx ? ' bp-focus' : '') + bumpCls(onActs && i === s.gameIdx && !hide);
+    const play = {label: acts[0], cls: 'bp-play' + fcls(0)};
+    const iconActs = ICON_ACTS.map((a, i) => ({label: a.label, d: a.d, sw: a.sw, cls: 'bp-btn bp-btn--round' + fcls(i + 1)}));
+    const gameTabs = GAME_TABS.map((t, i) => ({name: t, sel: String(i === s.gameTab)}));
+    const tabCards = TAB_CARDS[s.gameTab].map((c, i) => { const f = !onActs && i === s.cardIdx; return Object.assign({}, c, {cls: 'bp-group' + (f ? ' is-focus' : '') + bumpCls(f && !hide)}); });
+    const ids = s.from === 'library' ? vis.map((g) => g.i) : this.homeList().filter((x) => x >= 0);
+    const cur = s.screen === 'game' ? s.from : s.screen;
+    const mainItems = MAIN.map((m, i) => ({name: m.name, d: m.d, end: m.go === cur ? '● You are here' : (m.end || ''), sep: !!m.sep,
+      cls: 'bp-row' + (m.danger ? ' bp-row--danger' : '') + (i === s.mainIdx ? ' is-focus' : '') + bumpCls(i === s.mainIdx)}));
+    const qn = [['P1 · DualSense', '78%'], ['P2 · Xbox Wireless', '12%, low'], ['P3 · waiting', 'Press a button'], ['All controllers are player 1', ''], ['Frame rate overlay in games', '']];
+    const quickItems = qn.map((q, i) => ({name: q[0], end: q[1], isSwitch: i >= 3, on: i === 3 ? String(s.merge) : String(s.fps),
+      cls: 'bp-row' + (i === s.quickIdx ? ' is-focus' : '') + bumpCls(i === s.quickIdx)}));
+
+    const res = this.searchResults(s.query);
+    const ri = Math.min(s.resIdx, res.length - 1);
+    const searchRes = res.slice(0, 5).map((g, i) => {
+      const f = s.searchZone === 'results' && i === ri;
+      return {n: g.n, art: g.art, glow: glowOf(g.art), statusText: ST[g.st][0], statusCls: ST[g.st][2], cls: 'bp-tile' + (f ? ' is-focus' : '') + bumpCls(f && !hide)};
+    });
+    const kbRows = KB.map((row, r) => ({keys: row.map((key, c) => {
+      const f = s.searchZone === 'kb' && r === s.kbRow && c === Math.min(s.kbCol, row.length - 1);
+      const kind = key === 'space' ? ' key--space' : key === 'Done' ? ' key--go' : key === '⌫' ? ' key--wide' : '';
+      return {label: key, cls: 'key' + kind + (f ? ' is-focus' : '') + bumpCls(f && !hide)};
+    })}));
+    const buildRows = BUILD_ROWS.map((b, i) => {
+      const f = i === s.buildIdx, stopped = b.running && s.buildStopped;
+      return {n: G[b.id].n, art: G[b.id].art, sub: stopped ? 'Update 1.1 · Mac · stopped by you' : b.sub, sec: b.sec, hasSec: !!b.sec, running: !!b.running && !stopped,
+        status: stopped ? 'Stopped' : (b.status || ''), scls: stopped ? 'nx-status nx-status--building' : (b.scls || ''), cls: 'brow' + (f ? ' is-focus' : '') + bumpCls(f && !hide)};
+    });
+    const lay = s.ctlLayout === 1 ? {a: 'B', b: 'A', x: 'Y', y: 'X'} : {a: 'A', b: 'B', x: 'X', y: 'Y'};
+    const legend = ['a', 'b', 'x', 'y'].map((k) => { const o = glyph(k, true); return {from: o.g, name: o.name, d: o.d, svg: o.svg, to: lay[k], cls: 'lg-btn' + (k === 'a' ? ' lg-a' : '')}; });
+    const facePos = fam === 'nintendo' ? {top: 'x', left: 'y', right: 'a', bottom: 'b'} : {top: 'y', left: 'x', right: 'b', bottom: 'a'};
+    const fd = {}; Object.keys(facePos).forEach((p) => { const k = facePos[p], o = glyph(k, true), conf = k === 'a';
+      fd[p] = {g: o.g, d: o.d, fill: conf ? '#fff0d6' : 'rgba(255,255,255,.14)', ink: conf ? '#000000' : '#ffffff'}; });
+    const notes = ['Auto: By label for this Xbox controller. The letter you press is the letter the game gets.', 'Standard: by position, as on the console. Bottom sends B, right sends A.', 'By label: the letter you press is the letter the game gets.', 'Custom: set by hand on the desktop for now. Shown here as By label.'];
+    const ctlRows = LAYOUTS.map((l, i) => ({name: l.name, note: l.note, radio: 'radio' + (i === s.ctlLayout ? ' on' : ''), cls: 'bp-row' + (i === s.ctlIdx ? ' is-focus' : '') + bumpCls(i === s.ctlIdx && !hide)}));
+    const sortRows = SORTS.map((name, i) => ({name: name, radio: 'radio' + (i === s.sortIdx ? ' on' : ''), cls: 'bp-row' + (i === s.optIdx ? ' is-focus' : '') + bumpCls(i === s.optIdx)}));
+    const showRows = [['iPhone-only games', s.showIphone], ['Game names under tiles', s.showNames]].map((r, j) => ({name: r[0], on: String(r[1]), cls: 'bp-row' + (s.optIdx === 4 + j ? ' is-focus' : '') + bumpCls(s.optIdx === 4 + j)}));
+    const lv = s.loVals;
+    const loRows = LO.map((o, i) => { const f = s.loZone === 'rows' && i === s.loIdx, off = o.needs && !o.needs(lv);
+      return {n: o.n, v: o.vals[lv[i]], dot: lv[i] !== o.def ? 1 : 0, op: off ? 0.45 : 1, hasNote: f || off, note: off ? o.off : o.note, cls: 'bp-row' + (f ? ' is-focus' : '') + bumpCls(f && !hide)}; });
+    const loChangedN = LO.filter((o, i) => lv[i] !== o.def).length;
+    const loCats = [['Basic', String(LO.length)], ['Advanced', '14'], ['Mods', '2 on']].map((c, i) => { const f = s.loZone === 'side' && s.loSide === i; return {name: c[0], count: c[1], cls: 'cat' + (i === 0 ? ' on' : '') + (f ? ' is-focus' : '') + bumpCls(f)}; });
+    const cheatsOn = s.cheats.slice(1).filter((x) => x).length;
+    const manageItems = MANAGE.map((m, i) => ({name: m.name, end: m.name === 'Cheats' ? cheatsOn + ' on' : (m.end || ''), sep: !!m.sep,
+      cls: 'bp-row' + (m.danger ? ' bp-row--danger' : '') + (i === s.mgIdx ? ' is-focus' : '') + bumpCls(i === s.mgIdx)}));
+    const onCheats = s.gameZone === 'cards' && s.gameTab === 3;
+    const cheatRows = CHEATS.map((name, i) => { const f = onCheats && i === s.chIdx;
+      return {n: name, isSwitch: i < 4, on: String(!!s.cheats[i]), end: i === 3 ? 'Runs once, used from the game window' : i === 4 ? 'Malformed, will not run' : '', endColor: i === 4 ? '#ff6b66' : 'rgba(235,235,245,.6)',
+        op: i === 4 || (i > 0 && !s.cheats[0]) ? 0.5 : 1, cls: 'bp-row' + (f ? ' is-focus' : '') + bumpCls(f && !hide)}; });
+    const del = s.confirmKind === 'delete';
+    const cfBtns = [{label: 'Cancel', bg: s.cfIdx === 1 ? '' : 'rgba(255,255,255,.16)', cls: 'bp-btn' + (s.cfIdx === 1 ? ' bp-focus' : '') + bumpCls(s.cfIdx === 1)}, {label: del ? 'Delete game' : 'Remove', bg: s.cfIdx === 2 ? '' : 'rgba(255,107,102,.14)', cls: 'bp-btn danger' + (s.cfIdx === 2 ? ' bp-focus' : '') + bumpCls(s.cfIdx === 2)}];
+    const setNames = [['Start in console mode', 'Opens console mode every time the launcher starts, with or without a controller.'], ['Offer console mode when a controller connects', 'At most once each time the launcher starts.'], ['Controller vibration', ''], ['Button glyphs', '']];
+    const setRows = setNames.map((r, j) => { const f = s.setIdx === j + 1; return {n: r[0], note: r[1], hasNote: !!r[1], isSwitch: j < 3, on: String(!!s.setSw[j]), hasVal: j === 3, v: GLYPH_OPTS[s.glyphIdx], cls: 'bp-row' + (f ? ' is-focus' : '') + bumpCls(f)}; });
+    const crBtns = ['Play again', 'Game page'].map((l, i) => ({label: l, cls: (i === 0 ? 'bp-play' : 'bp-btn') + (s.crIdx === i ? ' bp-focus' : '') + bumpCls(s.crIdx === i)}));
+    // Menu and View (Xbox), Options and Create (PlayStation) are icons on the controller, so the hints draw them
+    const H = (key, label, primary) => { const o = glyph(key); return Object.assign(o, {label: label, gcls: o.cls + (primary && !keys ? ' bp-g--a' : '')}); };
+    let hl = [H('plus', 'Menu'), H('minus', 'Quick menu')], hr = [];
+    if (s.layer === 'main') { hl = []; hr = [H('b', 'Close'), H('a', 'Open', true)]; }
+    else if (s.layer === 'libopts') { hl = []; hr = [H('b', 'Close'), H('a', 'Choose', true)]; }
+    else if (s.layer === 'manage') { hl = []; hr = [H('b', 'Close'), H('a', 'Choose', true)]; }
+    else if (s.layer === 'confirm') { hl = []; hr = [H('b', 'Cancel'), H('a', s.cfIdx === 0 ? 'Switch' : 'Choose', true)]; }
+    else if (s.screen === 'launchopts' && s.loZone === 'rows') hr = [H('y', 'Default'), H('x', 'Play'), H('b', 'Sections'), H('a', 'Change', true)];
+    else if (s.screen === 'launchopts') hr = [H('x', 'Play'), H('b', 'Back'), H('a', s.loSide === 3 ? 'Reset' : 'Open', true)];
+    else if (s.screen === 'settings') hr = [H('b', 'Back'), H('a', s.setIdx === 0 ? 'Open Settings' : s.setIdx === 4 ? 'Change' : s.setIdx === 5 ? 'Open' : 'Switch', true)];
+    else if (s.screen === 'crashed') { hl = []; hr = [H('b', 'Game page'), H('a', 'Choose', true)]; }
+    else if (s.screen === 'search' && s.searchZone === 'results') { hl = []; hr = [H('b', 'Keyboard'), H('x', 'Play'), H('a', 'Game page', true)]; }
+    else if (s.screen === 'search') { hl = []; hr = [H('x', 'Delete'), H('y', 'Space'), H('plus', 'Done'), H('b', 'Close'), H('a', 'Type', true)]; }
+    else if (s.screen === 'builds') hr = (s.buildIdx === 0 && !s.buildStopped ? [H('x', 'Stop')] : []).concat([H('b', 'Back'), H('a', 'Details', true)]);
+    else if (s.screen === 'controls') hr = [H('b', 'Back'), H('a', 'Choose', true)];
+    else if (s.layer === 'quick') { hl = []; hr = [H('b', 'Close'), H('a', s.quickIdx >= 3 ? 'Switch' : 'Identify', true)]; }
+    else if (s.topFocus && (s.screen === 'home' || s.screen === 'library')) hr = [H('b', 'Back'), H('a', 'Search', true)];
+    else if (s.screen === 'home' && onAll) hr = [H('y', 'Search'), H('a', 'Open the library', true)];
+    else if (s.screen === 'home') hr = [H('y', 'Search'), H('x', 'Play'), H('a', 'Game page', true)];
+    else if (s.screen === 'library' && s.zone === 'filters') hr = [H('b', 'Home'), H('a', 'Choose', true)];
+    else if (s.screen === 'library') hr = [H('y', 'Sort'), H('x', 'Play'), H('b', 'Home'), H('a', 'Game page', true)];
+    else if (s.screen === 'game') { hl = [H('plus', 'Menu'), H('minus', 'Quick menu')]; hr = [H('b', 'Back'), H('a', s.gameZone === 'cards' ? (s.gameTab === 3 ? 'Switch' : 'Open') : acts[s.gameIdx], true)]; }
+    else if (s.screen === 'starting') { hl = []; hr = [H('b', 'Cancel')]; }
+
+    const p = {};
+    ['up', 'down', 'left', 'right', 'a', 'b', 'x', 'y', 'l', 'r', 'plus', 'minus', 'home'].forEach((k) => { p[k] = () => this.press(k); });
+    const fp = FACE_POS[fam];
+    const faces = ['a', 'b', 'x', 'y'].map((k) => ({g: gl[k], col: fp[k][0], row: fp[k][1], press: p[k], aria: 'Button ' + gl[k], cls: 'k' + (k === 'a' ? ' k--a' : '')}));
+    const names = {xbox: 'Xbox', ps: 'PlayStation', nintendo: 'Nintendo'};
+    const families = ['xbox', 'ps', 'nintendo'].map((f) => ({name: names[f], sel: String(f === fam), pick: () => this.setState({family: f})}));
+    const keymap = {ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', Enter: 'a', ' ': 'a', Escape: 'b', Backspace: 'b', Delete: 'b', b: 'b', x: 'x', y: 'y', q: 'l', e: 'r', m: 'plus', v: 'minus', h: 'home'};
+    const stageText = s.stage === 'open' ? 'Opening the game window' : 'Compiling shaders';
+    const whereNames = {home: 'Home', library: 'Library', game: 'Game page', starting: 'Starting', ingame: 'In a game', search: 'Search', builds: 'Builds', controls: 'Controls', launchopts: 'Launch options', settings: 'Settings', crashed: 'The game stopped'};
+
+    return {
+      tvCls: hide ? 'hide-focus' : '', bk: glyph('b'), fd: fd, homeName: HOME_NAME[fam],
+      scrCls: 'scr' + (s.entering ? ' is-entering' + (s.entering === 'back' ? ' from-left' : '') : ''),
+      inMain: s.layerIn === 'main' ? 'p-in' : '', inQuick: s.layerIn === 'quick' ? 'p-in' : '', inLib: s.layerIn === 'libopts' ? 'p-in' : '', inManage: s.layerIn === 'manage' ? 'p-in' : '', inConfirm: s.layerIn === 'confirm' ? 'p-in' : '',
+      isBrowse: s.screen === 'home',
+      isGameLike: ['game', 'starting', 'controls', 'launchopts', 'crashed'].indexOf(s.screen) >= 0,
+      showTop: ['home', 'library', 'game', 'search', 'builds', 'controls', 'launchopts', 'settings', 'crashed'].indexOf(s.screen) >= 0,
+      isTabs: ['home', 'library', 'search', 'builds', 'controls', 'launchopts', 'settings'].indexOf(s.screen) >= 0, showSearchIcon: s.screen === 'home' || s.screen === 'library',
+      screenTitle: whereNames[s.screen],
+      backLabel: {library: 'Library', search: 'Search'}[s.from] || 'Home',
+      isHome: s.screen === 'home', isLibrary: s.screen === 'library', isGamePage: s.screen === 'game',
+      isStarting: s.screen === 'starting', isInGame: s.screen === 'ingame',
+      isMain: s.layer === 'main', isQuick: s.layer === 'quick',
+      isLaunch: s.screen === 'launchopts', isSettings: s.screen === 'settings', isCrashed: s.screen === 'crashed', isManage: s.layer === 'manage', isConfirm: s.layer === 'confirm',
+      isCheatsTab: s.gameTab === 3, notCheatsTab: s.gameTab !== 3, cheatRows: cheatRows,
+      loRows: loRows, loCats: loCats, loResetCls: 'bp-btn' + (s.loZone === 'side' && s.loSide === 3 ? ' bp-focus' : '') + bumpCls(s.loZone === 'side' && s.loSide === 3),
+      loChanged: loChangedN ? loChangedN + ' changed from the tested defaults. A change counts from the game’s next start.' : 'All at the tested defaults.',
+      manageItems: manageItems, cfTitle: (del ? 'Delete “' : 'Remove “') + game.n + '”' + (del ? '?' : ' from the collection?'),
+      cfText: del ? 'These go to the Trash, so you can put them back from there.' : 'The game stays on this Mac. Add it again from the desktop.',
+      cfIsDelete: del, cfSavesOn: String(s.cfSaves), cfSwitchCls: 'bp-row' + (s.cfIdx === 0 ? ' is-focus' : '') + bumpCls(s.cfIdx === 0),
+      cfNote: del ? (s.cfSaves ? 'Saves go to the Trash too.' : 'Saves stay unless you choose to delete them too.') + ' The files you built it from (NSP, XCI) stay where they are.' : 'Its saves and cheats stay too.', cfBtns: cfBtns,
+      setRows: setRows, setBtnCls: 'bp-btn' + (s.setIdx === 0 ? ' bp-focus' : '') + bumpCls(s.setIdx === 0), setBackCls: 'bp-row' + (s.setIdx === 5 ? ' is-focus' : '') + bumpCls(s.setIdx === 5), crBtns: crBtns,
+      libHeading: s.activeFilter === 0 ? 'All games' : FILTERS[s.activeFilter].name, libCount: vis.length + (vis.length === 1 ? ' game' : ' games') + ' · ' + SORTS[s.sortIdx].toLowerCase(), capDisplay: s.showNames ? 'flex' : 'none',
+      isSearch: s.screen === 'search', isBuilds: s.screen === 'builds', isControls: s.screen === 'controls', isLibOpts: s.layer === 'libopts',
+      queryShown: s.query || 'Search your games', queryColor: s.query ? '#ffffff' : 'rgba(235,235,245,.45)', resCountText: s.query ? res.length + (res.length === 1 ? ' game' : ' games') : '', searchRes: searchRes, kbRows: kbRows, kbOpacity: s.searchZone === 'kb' ? 1 : 0.55,
+      buildRows: buildRows, buildPct: 62, legend: legend, layoutNote: notes[s.ctlLayout], ctlRows: ctlRows, ctlMergeCls: 'bp-row' + (s.ctlIdx === 4 ? ' is-focus' : ''), mergeOn: String(s.merge), ctlPlayers: [['P1 · Xbox Wireless', 0], ['P2 · DualSense', 1]].map((p) => ({name: p[0], sel: String(p[1] === s.ctlPlayer)})), sortRows: sortRows, showRows: showRows,
+      hero: hero, game: game, homeRows: homeRows, homeScroll: homeScroll, libTiles: libTiles, libScroll: libScroll, filters: filters,
+      play: play, iconActs: iconActs, gameTabs: gameTabs, tabCards: tabCards, searchCls: 'bp-icon' + (s.topFocus ? ' bp-focus' : ''), gamePos: ids.indexOf(s.gameId) + 1, gameCount: ids.length,
+      mainItems: mainItems, quickItems: quickItems,
+      hasToast: !!s.toast, toast: s.toast || '',
+      showHints: s.screen !== 'ingame', hintsLeft: hl, hintsRight: hr,
+      g: gl, p: p, faces: faces, families: families,
+      stageText: stageText, shaderText: s.stage === 'open' ? '' : s.shaders.toLocaleString('en-US') + ' of 3,860', shaderPct: Math.round(s.shaders / 38.6),
+      where: 'Screen: ' + whereNames[s.screen] + (s.layer ? ' · ' + ({main: 'Main menu', quick: 'Quick menu', libopts: 'Library options', manage: 'Manage', confirm: 'Confirmation'}[s.layer]) : ''),
+      reset: () => { clearInterval(this.iv); clearTimeout(this.iv); this.setState(Object.assign({}, INIT, {family: s.family})); },
+      onKey: (e) => {
+        const k = keymap[e.key] || keymap[(e.key || '').toLowerCase()];
+        if (!k) return;
+        e.preventDefault(); if (this.state.input !== 'keys') this.setState({input: 'keys'}); this.press(k);
+      }
+    };
+  }
+}
+
+const tpl = document.getElementById('tpl').content, root = document.getElementById('proto');
+const HOLE = /\{\{\s*([^}]+?)\s*\}\}/g;
+function look(path, scopes) {
+  if (path === 'true') return true; if (path === 'false') return false;
+  const parts = path.split('.');
+  for (const sc of scopes) if (sc && parts[0] in sc) return parts.slice(1).reduce((o, k) => o == null ? o : o[k], sc[parts[0]]);
+  return undefined;
+}
+function fill(str, scopes) {
+  const m = str.match(/^\{\{\s*([^}]+?)\s*\}\}$/);
+  if (m) { const v = look(m[1], scopes); return v == null ? '' : String(v); }
+  return str.replace(HOLE, (_, p) => { const v = look(p, scopes); return v == null ? '' : String(v); });
+}
+function hole(attr, scopes) { const m = (attr || '').match(/\{\{\s*([^}]+?)\s*\}\}/); return m ? look(m[1], scopes) : undefined; }
+function build(nodes, scopes, out) {
+  for (const n of nodes) {
+    if (n.nodeType === 3) { out.push(document.createTextNode(fill(n.nodeValue, scopes))); continue; }
+    if (n.nodeType !== 1) continue;
+    const tag = n.localName;
+    if (tag === 'sc-if') { if (hole(n.getAttribute('value'), scopes)) build(n.childNodes, scopes, out); continue; }
+    if (tag === 'sc-for') {
+      const list = hole(n.getAttribute('list'), scopes) || [], as = n.getAttribute('as');
+      list.forEach((item) => build(n.childNodes, [{[as]: item}].concat(scopes), out)); continue;
+    }
+    const el = n.cloneNode(false);
+    for (const a of Array.from(n.attributes)) {
+      if (a.name.startsWith('hint-placeholder')) { el.removeAttribute(a.name); continue; }
+      if (a.value.indexOf('{{') >= 0) el.setAttribute(a.name, fill(a.value, scopes));
+    }
+    const kids = []; build(n.childNodes, scopes, kids); kids.forEach((k) => el.appendChild(k));
+    out.push(el);
+  }
+  return out;
+}
+function patch(parent, fresh) {
+  const old = Array.from(parent.childNodes);
+  fresh.forEach((f, i) => {
+    const o = old[i];
+    if (!o) { parent.appendChild(f); return; }
+    if (o.nodeType !== f.nodeType || o.nodeName !== f.nodeName) { parent.replaceChild(f, o); return; }
+    if (o.nodeType === 3) { if (o.nodeValue !== f.nodeValue) o.nodeValue = f.nodeValue; return; }
+    for (const a of Array.from(o.attributes)) if (!f.hasAttribute(a.name)) o.removeAttribute(a.name);
+    for (const a of Array.from(f.attributes)) if (o.getAttribute(a.name) !== a.value) o.setAttribute(a.name, a.value);
+    patch(o, Array.from(f.childNodes));
+  });
+  for (let i = old.length - 1; i >= fresh.length; i--) parent.removeChild(old[i]);
+}
+let family = 'xbox';
+try { family = new URLSearchParams(location.search).get('pad') || localStorage.getItem('nx-bp-family') || 'xbox'; } catch (e) {}
+const comp = new Component({family});
+let vals = null, queued = false;
+function render() { queued = false; vals = comp.renderVals(); patch(root, build(tpl.childNodes, [vals], [])); }
+function schedule() { if (!queued) { queued = true; requestAnimationFrame(render); } }
+function setFamily(f) {
+  family = f; comp.props = {family: f}; try { localStorage.setItem('nx-bp-family', f); } catch (e) {}
+  document.querySelectorAll('[data-fam]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.fam === f)));
+  schedule();
+}
+document.querySelectorAll('[data-fam]').forEach((b) => b.addEventListener('click', () => { setFamily(b.dataset.fam); b.blur(); }));
+document.getElementById('reset').addEventListener('click', (e) => { vals && vals.reset(); e.currentTarget.blur(); });
+window.addEventListener('keydown', (e) => { if (e.metaKey || e.ctrlKey || e.altKey) return; vals && vals.onKey(e); });
+function fit() {
+  const s = Math.min(innerWidth / 1920, (innerHeight - 56) / 1080), st = document.getElementById('stage');
+  st.style.transform = 'scale(' + s + ')'; st.style.left = Math.max(0, (innerWidth - 1920 * s) / 2) + 'px';
+}
+addEventListener('resize', fit); fit();
+// What the browser reports, so a tester can say what it sees
+const info = document.getElementById('padinfo'), pill = document.getElementById('padpill');
+setInterval(() => {
+  let pads = [];
+  try { pads = Array.from(navigator.getGamepads ? navigator.getGamepads() : []).filter(Boolean); } catch (e) { info.textContent = 'Controllers blocked here'; pill.className = 'pad-pill'; return; }
+  if (!pads.length) { info.textContent = 'No controller · press a button'; pill.className = 'pad-pill'; pill.title = ''; return; }
+  const p = pads[0], down = p.buttons.map((b, i) => b.pressed ? i : -1).filter((i) => i >= 0);
+  info.textContent = p.id.replace(/^[0-9a-f]{4}-[0-9a-f]{4}-/i, '').replace(/\s*\(.*$/, '');
+  pill.className = 'pad-pill on';
+  pill.title = 'mapping: ' + (p.mapping || 'none') + ' · buttons ' + (down.join(',') || '–') + ' · axes ' + Array.from(p.axes).map((a) => a.toFixed(1)).join(' ');
+}, 150);
+const helpBtn = document.getElementById('helpbtn'), help = document.getElementById('help');
+helpBtn.addEventListener('click', (e) => { help.hidden = !help.hidden; helpBtn.setAttribute('aria-expanded', String(!help.hidden)); e.stopPropagation(); helpBtn.blur(); });
+document.addEventListener('click', (e) => { if (!help.hidden && !help.contains(e.target)) { help.hidden = true; helpBtn.setAttribute('aria-expanded', 'false'); } });
+setFamily(family); render(); comp.componentDidMount && comp.componentDidMount();
+</script>
+</body>
+</html>
