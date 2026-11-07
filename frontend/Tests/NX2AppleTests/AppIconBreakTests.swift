@@ -147,6 +147,29 @@ import XCTest
         XCTAssertEqual(reload.games[0].macAppIcon, built, "kept across launches")
     }
 
+    func testGoingBackToTheGamesIconWithoutItsFileAsksForNoRebuild() async throws {
+        fixture.library.recordCompletedApp(path: try builtApp(), for: fixture.gameID)
+        try await saveIcon()
+        let editor = fixture.editor(slot: .icon)
+        await editor.load()
+        let own = try XCTUnwrap(editor.tiles.first { $0.source == .gameIcon }, "the way back to the game's icon is always there")
+        XCTAssertTrue(editor.select(own))
+        XCTAssertTrue(editor.save(to: fixture.library))
+        XCTAssertNil(fixture.game.artwork.icon)
+        XCTAssertFalse(fixture.game.iconNeedsRebuild)
+    }
+
+    func testTheGamesIconIsReadFromAMacAppBuiltWithIt() throws {
+        let app = try builtApp()
+        let icns = URL(fileURLWithPath: app + "/Contents/Resources/AppIcon.icns")
+        try FileManager.default.createDirectory(at: icns.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try ArtworkFixture.picture(icns, width: 512, height: 512, hue: 0.2, label: "Icon")
+        fixture.library.recordCompletedApp(path: app, for: fixture.gameID)
+        XCTAssertEqual(GameLibrary.gameIcon(of: fixture.game)?.path, icns.path)
+        fixture.library.recordCompletedApp(path: app, icon: "custom.png", for: fixture.gameID)
+        XCTAssertNil(GameLibrary.gameIcon(of: fixture.game), "an app built with a custom icon does not show the game's own")
+    }
+
     func testAGameThatIsNotBuiltNeverAsksForARebuild() async throws {
         try await saveIcon()
         XCTAssertFalse(fixture.game.iconNeedsRebuild, "its first build takes the icon")

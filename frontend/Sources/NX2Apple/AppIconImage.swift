@@ -36,14 +36,17 @@ enum AppIconImage {
 }
 
 extension GameLibrary {
-    /// A built app can already have a custom icon, so only the extraction represents the default.
+    /// The game's own icon: the extraction's, else the icon of a Mac app built with it (one built with a custom icon shows that one).
     static func gameIcon(of game: LibraryGame) -> URL? {
         let output = game.outputDirectory.isEmpty ? game.sourceFolder : game.outputDirectory
-        guard !output.isEmpty else { return nil }
         let extract = output + "/" + game.titleID.uppercased() + "_build/extract"
-        guard let version = RomFSArchive.extractedVersion(in: extract) else { return nil }
-        let file = URL(fileURLWithPath: extract + "/" + version + "/icon.jpg")
-        return FileManager.default.fileExists(atPath: file.path) ? file : nil
+        if !output.isEmpty, let version = RomFSArchive.extractedVersion(in: extract) {
+            let file = URL(fileURLWithPath: extract + "/" + version + "/icon.jpg")
+            if FileManager.default.fileExists(atPath: file.path) { return file }
+        }
+        let built = URL(fileURLWithPath: game.appPath + "/Contents/Resources/AppIcon.icns")
+        guard game.isReady, game.macAppIcon == nil, FileManager.default.fileExists(atPath: built.path) else { return nil }
+        return built
     }
 
     func appIcon(for titleID: String, basePath: String) throws -> String? {

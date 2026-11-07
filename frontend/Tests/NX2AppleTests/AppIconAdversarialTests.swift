@@ -30,7 +30,7 @@ import XCTest
         var env = fixture.environment()
         env.media = { _, _ in .loaded(ArtworkStore.Media(screenshots: [], icon: "icon")) }
         let editor = ArtworkEditor(game: fixture.game, slot: .icon, artworkDirectory: fixture.artwork, env: env, labels: { L10n.string($0, .en) })
-        XCTAssertEqual(editor.cursor, 0)
+        XCTAssertEqual(editor.cursor, 1)   // after the game's own icon
         await editor.load()
         let cursor = try XCTUnwrap(editor.cursor)
         XCTAssertTrue(editor.tiles[cursor].isSelected, "cursor \(cursor) on \(editor.tiles[cursor].id), chosen is \(editor.tiles.first { $0.isSelected }?.id ?? "-")")

@@ -121,7 +121,15 @@ struct ArtworkPanel: View {
                     } else {
                         ZStack {
                             LauncherPalette.surface
-                            Image(systemName: tile.source == .gameIcon ? "app.dashed" : tile.isFailed ? "photo.badge.exclamationmark" : "photo").font(.system(size: 15, weight: .light)).foregroundStyle(.secondary)
+                            if tile.source == .gameIcon {
+                                VStack(spacing: 3) {   // its file is not on disk: the name says what choosing it does
+                                    Image(systemName: "app.dashed").font(.system(size: 14, weight: .light))
+                                    Text(t("artwork.gameIcon")).font(.manrope(10.5, .medium)).lineLimit(2).multilineTextAlignment(.center).minimumScaleFactor(0.8)
+                                }
+                                .foregroundStyle(.secondary).padding(.horizontal, 4)
+                            } else {
+                                Image(systemName: tile.isFailed ? "photo.badge.exclamationmark" : "photo").font(.system(size: 15, weight: .light)).foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }

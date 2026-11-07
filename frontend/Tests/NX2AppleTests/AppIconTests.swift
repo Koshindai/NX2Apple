@@ -10,10 +10,13 @@ import XCTest
     override func setUpWithError() throws { try super.setUpWithError(); fixture = try ArtworkFixture() }
     override func tearDownWithError() throws { fixture.cleanup(); fixture = nil; try super.tearDownWithError() }
 
-    func testUnavailableDefaultHasNoEmptyTileOrBuildOverride() async throws {
+    func testTheGamesIconTileIsOfferedWithoutItsFileAndIsNoBuildOverride() async throws {
         let editor = fixture.editor(slot: .icon)
         await editor.load()
-        XCTAssertFalse(editor.tiles.contains { $0.source == .gameIcon })
+        let tile = try XCTUnwrap(editor.tiles.first, "the game's own icon comes first even when its file is not on disk")
+        XCTAssertEqual(tile.source, .gameIcon)
+        XCTAssertTrue(tile.isSelected)
+        XCTAssertTrue(tile.isAvailable)
         XCTAssertNil(editor.selectedFile)
         XCTAssertEqual(editor.gridColumns, 4)
         XCTAssertFalse(editor.isDirty)
@@ -198,7 +201,7 @@ import XCTest
         for n in 0..<6 {
             await editor.importFile(try fixture.chosenImage(width: 1200, height: 1200, name: "icon-\(n).png", hue: CGFloat(n) / 6))
         }
-        XCTAssertEqual(editor.tiles.count, 6)
+        XCTAssertEqual(editor.tiles.count, 7, "the game's own icon, then the six files")
         editor.select(editor.tiles[0])
         editor.move(.right)
         XCTAssertEqual(editor.cursor, 1)

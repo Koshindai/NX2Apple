@@ -63,7 +63,8 @@ struct ArtworkEditorEnvironment {
         let isLowResolution: Bool
         /// The download failed: the tile stays empty and cannot be chosen.
         var isFailed = false
-        var isAvailable: Bool { file != nil }
+        /// The game's own icon needs no file: choosing it is choosing no icon of one's own.
+        var isAvailable: Bool { file != nil || source == .gameIcon }
 
         var id: String {
             switch source {
@@ -175,7 +176,7 @@ struct ArtworkEditorEnvironment {
     var tiles: [Tile] {
         var sources: [(ArtworkChoice.Source, URL?)] = []
         if slot == .icon {
-            if let gameIconFile { sources.append((.gameIcon, gameIconFile)) }
+            sources.append((.gameIcon, gameIconFile))
             if media?.icon != nil || downloaded[.eshopIcon] != nil { sources.append((.eshopIcon, downloaded[.eshopIcon])) }
         }
         if slot != .icon, let bannerFile { sources.append((.banner, bannerFile)) }
