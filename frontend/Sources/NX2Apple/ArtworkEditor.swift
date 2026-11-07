@@ -373,14 +373,14 @@ struct ArtworkEditorEnvironment {
         let existing = importURLs
         let widths = await Task.detached { existing.compactMapValues { env.pixelWidth($0) } }.value
         pixelWidths.merge(widths) { _, new in new }
-        bannerFile = env.banner(titleID)
+        keepingCursor { bannerFile = env.banner(titleID) }
         let result = await env.media(titleID, retrying)
         guard !closed, !Task.isCancelled else { return }
         switch result {
-        case .offline: media = nil; loadState = .offline
-        case .none: media = nil; loadState = .none
+        case .offline: keepingCursor { media = nil }; loadState = .offline
+        case .none: keepingCursor { media = nil }; loadState = .none
         case .loaded(let found):
-            media = found
+            keepingCursor { media = found }
             loadState = .loaded
             for source in found.screenshots.indices.map({ ArtworkChoice.Source.screenshot($0) }) + (found.icon == nil ? [] : [.eshopIcon]) {
                 if let file = env.cachedCandidate(source, titleID) { downloaded[source] = file; continue }
@@ -395,6 +395,13 @@ struct ArtworkEditorEnvironment {
             }
         }
         if cursor == nil { cursor = tiles.firstIndex { $0.isSelected } }
+    }
+
+    /// A tile that arrives (the banner, the screenshots, the eShop icon) can come before the one the cursor is on: it stays on that tile.
+    private func keepingCursor(_ change: () -> Void) {
+        let on = cursor.flatMap { tiles.indices.contains($0) ? tiles[$0].id : nil }
+        change()
+        cursor = on.flatMap { id in tiles.firstIndex { $0.id == id } } ?? cursor
     }
 
 

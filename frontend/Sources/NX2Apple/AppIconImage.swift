@@ -47,7 +47,8 @@ extension GameLibrary {
     }
 
     func appIcon(for titleID: String, basePath: String) throws -> String? {
-        guard let game = games.first(where: { $0.titleID.caseInsensitiveCompare(titleID) == .orderedSame || (!$0.inputs["base", default: []].isEmpty && $0.inputs["base"]?.first == basePath) }),
+        let byTitle = games.first { $0.titleID.caseInsensitiveCompare(titleID) == .orderedSame }
+        guard let game = byTitle ?? games.first(where: { !basePath.isEmpty && $0.inputs["base"]?.first == basePath }),
               game.artwork.icon != nil else { return nil }
         guard let name = game.artwork.iconFile, name == URL(fileURLWithPath: name).lastPathComponent, name != ".." else { throw ArtworkImport.Failure.unreadable }
         let file = ArtworkStore.customDirectory(for: game.id, in: artworkDirectory).appendingPathComponent(name)

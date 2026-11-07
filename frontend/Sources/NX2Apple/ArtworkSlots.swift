@@ -91,7 +91,8 @@ struct GameArtwork: Codable, Equatable, Hashable {
         if thumbnail?.source == .gameIcon || thumbnail?.source == .eshopIcon { thumbnail = nil }
         icon = try? c.decodeIfPresent(ArtworkChoice.self, forKey: .icon)
         iconFile = try? c.decodeIfPresent(String.self, forKey: .iconFile)
-        if icon?.source == .gameIcon { icon = nil; iconFile = nil }
+        if icon?.source == .gameIcon { icon = nil }
+        if icon == nil { iconFile = nil }
     }
 
     /// The choice the slot is drawn from: a thumbnail's own, else the hero's.
