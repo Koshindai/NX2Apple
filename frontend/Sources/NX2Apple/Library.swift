@@ -28,6 +28,10 @@ struct LibraryGame: Codable, Identifiable, Equatable {
     var installedDevice = ""
     /// The engine's commit (engine/ HEAD: the pin plus the series) the last finished build used (ToolsAge); empty for a build from before it was recorded.
     var toolsCommit = ""
+    /// The icon (`GameArtwork.iconFile`) the last Mac app and one-game IPA builds were packed with; nil is the game's own,
+    /// which every build from before the App icon tab has.
+    var macAppIcon: String?
+    var ipaIcon: String?
 
     /// An empty path means there is no Mac build. It is not read, because URL(fileURLWithPath:) would make it the current folder.
     var isReady: Bool {
@@ -81,6 +85,13 @@ extension LibraryGame {
         iosAppPath = try c.decodeIfPresent(String.self, forKey: .iosAppPath) ?? ""
         installedDevice = try c.decodeIfPresent(String.self, forKey: .installedDevice) ?? ""
         toolsCommit = try c.decodeIfPresent(String.self, forKey: .toolsCommit) ?? ""
+        macAppIcon = try? c.decodeIfPresent(String.self, forKey: .macAppIcon)
+        ipaIcon = try? c.decodeIfPresent(String.self, forKey: .ipaIcon)
+    }
+
+    /// A saved icon the built app or IPA does not show yet: only then is a rebuild worth offering.
+    var iconNeedsRebuild: Bool {
+        (isReady && artwork.iconFile != macAppIcon) || (hasIPA && artwork.iconFile != ipaIcon)
     }
 }
 
@@ -574,7 +585,7 @@ final class GameLibrary: ObservableObject {
         return game.id
     }
 
-    func recordCompletedApp(path: String, commit: String = "", for id: UUID) {
+    func recordCompletedApp(path: String, commit: String = "", icon: String? = nil, for id: UUID) {
         guard var game = games.first(where: { $0.id == id }),
               let app = try? MacGameBundle.read(URL(fileURLWithPath: path)),
               app.titleID == game.titleID || game.titleID.hasPrefix("/") else { return }
@@ -595,9 +606,16 @@ final class GameLibrary: ObservableObject {
         game.titleID = app.titleID
         game.appPath = path
         game.name = app.name
+        game.macAppIcon = icon
         game.toolsCommit = commit   // empty for a checkout without git: nothing to compare, rather than an older build's commit
         upsert(game)
         selectedID = game.id
+    }
+
+    func recordOneGameIPA(icon: String?, for id: UUID) {
+        guard var game = games.first(where: { $0.id == id }) else { return }
+        game.ipaIcon = icon
+        upsert(game)
     }
 
     func recordCompletedIOS(archive: String, app: String, device: String = "", commit: String = "", for id: UUID) {

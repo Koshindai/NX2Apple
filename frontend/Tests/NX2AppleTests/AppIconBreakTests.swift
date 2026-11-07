@@ -108,6 +108,50 @@ import XCTest
         XCTAssertTrue(FileManager.default.fileExists(atPath: fixture.customDirectory.appendingPathComponent(name).path), "and the source the icon was cut from")
     }
 
+    // ---- The rebuild offer ----
+
+    private func builtApp() throws -> String {
+        let app = fixture.temporary.appendingPathComponent("Hades.app")
+        let executables = app.appendingPathComponent("Contents/MacOS")
+        try FileManager.default.createDirectory(at: executables, withIntermediateDirectories: true)
+        for name in ["nxnative", "dmhost"] {
+            try FileManager.default.createSymbolicLink(at: executables.appendingPathComponent(name), withDestinationURL: URL(fileURLWithPath: "/usr/bin/true"))
+        }
+        let info: [String: Any] = ["DMTitleID": fixture.titleID, "CFBundleDisplayName": "Hades", "CFBundleExecutable": "nxnative", "CFBundleIdentifier": TestPreferences.domain(in: fixture.temporary, "icon")]
+        try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0).write(to: app.appendingPathComponent("Contents/Info.plist"))
+        return app.path
+    }
+
+    private func saveIcon(reset: Bool = false) async throws {
+        let editor = fixture.editor(slot: .icon)
+        await editor.load()
+        if reset { editor.reset(.icon) } else { await editor.importFile(try fixture.chosenImage(width: 1600, height: 900)) }
+        XCTAssertTrue(editor.save(to: fixture.library))
+    }
+
+    func testARebuildIsOfferedOnlyWhenTheSavedIconIsNotTheOneInTheBuiltApp() async throws {
+        fixture.library.recordCompletedApp(path: try builtApp(), for: fixture.gameID)   // built with the game's own icon
+        XCTAssertFalse(fixture.game.iconNeedsRebuild)
+        try await saveIcon()
+        XCTAssertTrue(fixture.game.iconNeedsRebuild, "a new icon the app does not show yet")
+        try await saveIcon(reset: true)
+        XCTAssertFalse(fixture.game.iconNeedsRebuild, "back to the icon the app already has: nothing to rebuild")
+
+        try await saveIcon()
+        let built = fixture.game.artwork.iconFile
+        fixture.library.recordCompletedApp(path: fixture.game.appPath, icon: built, for: fixture.gameID)
+        XCTAssertFalse(fixture.game.iconNeedsRebuild)
+        try await saveIcon(reset: true)
+        XCTAssertTrue(fixture.game.iconNeedsRebuild, "the app was built with the custom icon, so going back needs a rebuild")
+        let reload = GameLibrary(file: fixture.temporary.appendingPathComponent("library.json"), artwork: fixture.artwork)
+        XCTAssertEqual(reload.games[0].macAppIcon, built, "kept across launches")
+    }
+
+    func testAGameThatIsNotBuiltNeverAsksForARebuild() async throws {
+        try await saveIcon()
+        XCTAssertFalse(fixture.game.iconNeedsRebuild, "its first build takes the icon")
+    }
+
     // ---- Downloads ----
 
     private func eShopEnvironment(hold: @escaping () -> Bool) -> ArtworkEditorEnvironment {

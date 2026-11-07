@@ -719,8 +719,11 @@ struct LauncherView: View {
 
     private func recordBuild() {
         guard m.done, let id = activeBuildID else { return }
-        if m.target == BuildTarget.mac { library.recordCompletedApp(path: m.macAppPath, commit: buildCommit, for: id) }
-        else { library.recordCompletedIOS(archive: m.archivePath, app: m.installedAppPath, device: m.installedOn, commit: buildCommit, for: id) }
+        let icon = m.iconPassed.map { URL(fileURLWithPath: $0).lastPathComponent }
+        if m.target == BuildTarget.mac { library.recordCompletedApp(path: m.macAppPath, commit: buildCommit, icon: icon, for: id) }
+        else {
+            if !m.oneGameIPAPath.isEmpty { library.recordOneGameIPA(icon: icon, for: id) }
+            library.recordCompletedIOS(archive: m.archivePath, app: m.installedAppPath, device: m.installedOn, commit: buildCommit, for: id) }
         refreshArtwork()
         if performStartupChecks { checkTools() }
     }

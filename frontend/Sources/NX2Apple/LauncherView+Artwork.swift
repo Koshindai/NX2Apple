@@ -54,11 +54,12 @@ extension LauncherView {
     /// A Save the library could not write keeps the panel open with its error.
     func closeArtwork(save: Bool) {
         guard let editor = artworkEditor else { return }
-        let iconChanged = editor.draft.icon != editor.original.icon
         if save { guard editor.save(to: library) || !editor.isDirty else { return } } else { editor.cancel() }
         withAnimation(.easeOut(duration: 0.18)) {
             artworkEditor = nil
-            if save, iconChanged, let game = library.games.first(where: { $0.id == editor.gameID }), game.isReady || game.hasIPA { iconRebuildGame = game.id }
+            if save, let game = library.games.first(where: { $0.id == editor.gameID }) {
+                if game.iconNeedsRebuild { iconRebuildGame = game.id } else if iconRebuildGame == game.id { iconRebuildGame = nil }
+            }
         }
         artworkSlot = nil
         artworkPreview = nil

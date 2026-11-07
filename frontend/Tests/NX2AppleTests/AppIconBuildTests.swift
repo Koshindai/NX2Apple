@@ -48,6 +48,7 @@ import XCTest
             build.startBuild()
             XCTAssertEqual(build.lastBuildCommand.contains("--icon"), expectsIcon, build.lastBuildCommand.joined(separator: " "))
             if expectsIcon, let index = build.lastBuildCommand.firstIndex(of: "--icon") { XCTAssertEqual(build.lastBuildCommand[index + 1], icon) }
+            XCTAssertEqual(build.iconPassed, expectsIcon ? icon : nil, "what the library records as the built app's icon")
             if build.running {
                 let ended = expectation(description: "stand-in exited")
                 let token = build.$running.filter { !$0 }.prefix(1).sink { _ in ended.fulfill() }

@@ -154,6 +154,7 @@ func hop(_ body: @escaping @MainActor () -> Void) {
     /// default under the input folder (issue #5 — an upstream checkout has no --work-dir).
     package var effectiveWorkDir = ""
     package var appIcon: (_ titleID: String, _ basePath: String) throws -> String? = { _, _ in nil }
+    package var iconPassed: String?   // the --icon this build was given, nil for the game's own
     package var lastBuildCommand: [String] = []   // this session's last build, for Copy diagnostics (Diagnostics.swift)
 
     // ---- Installing on an iPhone or iPad (Xcode with a development certificate) ----
