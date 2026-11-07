@@ -1,0 +1,129 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marko=20Banus=CC=8Cic=CC=81?= <mbanusic@gmail.com>
+Date: Thu, 5 Nov 2026 21:55:42 +0100
+Subject: [PATCH] build_ipa_from_nsp.py: --icon picks the app's icon instead of
+ the game's own
+
+A built app's icon is always the game's icon.jpg from its control data. A player
+who wants another picture (the game has none, as a dump folder does, or they
+prefer a different one) has no way to set it for a Mac app: DM_ICON reaches only
+build_ipa.sh, and pack_app.py takes --icon only from the NSP script.
+
+--icon IMAGE names a PNG, JPEG or HEIC picture. app_icon() returns it instead of
+the game's icon.jpg, and the NSP script hands it on as before: to pack_app.py's
+--icon for --platform mac-app (sips and iconutil turn it into AppIcon.icns, and
+the app's input key changes with it, so a reused app is packed again) and as
+DM_ICON for the IPA. A path that is not a file stops the build with its name.
+Without --icon nothing changes.
+
+Checked: dm/tools/tests/test_nsp_mac_app.py and test_docs.py (76 tests) on
+Python 3.15, two new tests for the option and the choice. lint_python.py has no
+new finding in the changed files.
+
+Front-ends: new: --icon IMAGE sets the built app's icon (IPA and Mac app)
+
+Claude-Session: https://claude.ai/code/session_01Th2dEas7VEirfhogR7VK5Y
+
+Upstream-Status: forwarded seedds/nxnative#1380
+Reason: the launcher's App icon tab (LNPANDY/NX2Apple#775) passes --icon for a Mac app or a one-game IPA before upstream merges it
+Issue: LNPANDY/NX2Apple#775
+---
+ dm/tools/tests/test_nsp_mac_app.py | 14 ++++++++++++++
+ docs/development.md                |  7 +++++--
+ scripts/build_ipa_from_nsp.py      | 12 +++++++++++-
+ 3 files changed, 30 insertions(+), 3 deletions(-)
+
+diff --git a/dm/tools/tests/test_nsp_mac_app.py b/dm/tools/tests/test_nsp_mac_app.py
+index 40096e88..da6d3bd6 100644
+--- a/dm/tools/tests/test_nsp_mac_app.py
++++ b/dm/tools/tests/test_nsp_mac_app.py
+@@ -833,6 +833,20 @@ class Script(unittest.TestCase):
+         a = nsp.parse_args(['--platform', 'mac-app', '--mac-sign', 'Developer ID Application: X (T)', '-o', '/tmp/x.app'])
+         self.assertEqual((a.platform, a.mac_sign, a.out), ('mac-app', 'Developer ID Application: X (T)', '/tmp/x.app'))
+ 
++    def test_icon_option(self):
++        self.assertIsNone(nsp.parse_args([]).icon)
++        self.assertEqual(nsp.parse_args(['--icon', '/x/icon.png']).icon, '/x/icon.png')
++
++    def test_app_icon(self):   # --icon wins over the game's icon.jpg; without it the packed version's icon, then the base game's
++        tmp = Path(tempfile.mkdtemp(dir=TEST_ROOT)); self.addCleanup(shutil.rmtree, tmp)
++        game, base = tmp / 'game', tmp / 'base'; game.mkdir(); base.mkdir()
++        self.assertIsNone(nsp.app_icon(None, game, base))
++        (base / 'icon.jpg').write_bytes(b'base'); self.assertEqual(nsp.app_icon(None, game, base), base / 'icon.jpg')
++        (game / 'icon.jpg').write_bytes(b'game'); self.assertEqual(nsp.app_icon('', game, base), game / 'icon.jpg')
++        (tmp / 'mine.png').write_bytes(b'png')
++        with mock.patch.object(nsp, 'say'): self.assertEqual(nsp.app_icon(str(tmp / 'mine.png'), game, base), (tmp / 'mine.png').resolve())
++        with self.assertRaises(nsp.BuildError): nsp.app_icon(str(tmp / 'missing.png'), game, base)
++
+     def test_app_name(self):
+         self.assertEqual(nsp.mac_app_name('The Legend of Zelda: Echoes of Wisdom'), 'The Legend of Zelda - Echoes of Wisdom')
+         self.assertEqual(nsp.mac_app_name('AC/DC'), 'AC - DC'); self.assertEqual(nsp.mac_app_name(':'), 'nxnative')
+diff --git a/docs/development.md b/docs/development.md
+index 8f5d71b7..f9ca7701 100644
+--- a/docs/development.md
++++ b/docs/development.md
+@@ -359,6 +359,9 @@ GH_TOKEN=$(gh auth token) python3 dm/tools/triage_report.py --fetch origin > rep
+ # written to the Desktop with your own home-screen name
+ python3 scripts/build_ipa_from_nsp.py ~/Games/MarioWonder -k ~/keys/prod.keys -o ~/Desktop/Mario.ipa --app-name "Mario Wonder"
+ 
++# your own app icon instead of the game's, for the IPA or the Mac app (a square PNG, JPEG or HEIC; 1024x1024 looks best)
++python3 scripts/build_ipa_from_nsp.py ~/Games/MarioWonder -k ~/keys/prod.keys --icon ~/Pictures/mario-icon.png
++
+ # pack Mario 1.0.0 instead of 1.2.1 (the folder still needs both NSPs: the shader tables cover both versions)
+ python3 scripts/build_ipa_from_nsp.py ~/Games/MarioWonder -k ~/keys/prod.keys -p v0
+ 
+@@ -568,7 +571,7 @@ What step 1 does not cover yet (GitHub issue #402): a replay that equals the liv
+ 
+ ### A Mac app
+ 
+-`--platform mac-app` (`PLATFORM = 'mac-app'` in Spyder) builds everything `--platform mac` builds, then packs a Mac app of the game with `dm/mac/pack_app.py`. The app is `<NSP folder>/<game name>.app` (a `:` or `/` in the name becomes ` - `); `-o` names another path ending in `.app`. Open it from Finder, from any folder: it does not need the build folder or the drive it is on. Like the Mac host, it needs a Mac with Apple silicon. Its name, version and bundle ID are the IPA's: the game name and display version from the control data, and `org.nxnative.<title ID>`. Its icon is the game's icon as `AppIcon.icns` (`sips`, `iconutil`).
++`--platform mac-app` (`PLATFORM = 'mac-app'` in Spyder) builds everything `--platform mac` builds, then packs a Mac app of the game with `dm/mac/pack_app.py`. The app is `<NSP folder>/<game name>.app` (a `:` or `/` in the name becomes ` - `); `-o` names another path ending in `.app`. Open it from Finder, from any folder: it does not need the build folder or the drive it is on. Like the Mac host, it needs a Mac with Apple silicon. Its name, version and bundle ID are the IPA's: the game name and display version from the control data, and `org.nxnative.<title ID>`. Its icon is the game's icon as `AppIcon.icns` (`sips`, `iconutil`), or the picture `--icon` names (PNG, JPEG or HEIC, square, 1024x1024 at best).
+ 
+ The bundle holds what the IPA holds, with the Mac's shader libraries:
+ 
+@@ -700,7 +703,7 @@ Notes on these steps:
+ - Each shader's cache key (`shader_key`) includes `CODE_FP`, a hash of the *code form* (`dmsh_chain.code_form`: the AST, with docstrings and the rule functions' bodies removed) of `dmsh_build.py` and its helper modules. An edit that cannot change the output (a comment, a docstring, blank lines, formatting) keeps every shader's key, so the next build restores them all instead of translating them again; any change to code, a constant, a string literal or a default argument still rebuilds all of them. The chain version is not touched by this: it still hashes whole files.
+ - `build_ipa.sh` takes the rewritten modules from `$W/build/patched_<package>` and the RomFS image from `$W/data/<package>/RomFS.img` (legacy folders are also accepted); `PATCHED` and `ROMFS` override them. In unsigned IPA mode, `pack_ipa.py` packs the shader libraries, RomFS and add-on content beside the app Xcode built, as `DmIOS.app/msl/b-<chain version>`, `romfs` and `aoc`. Prepared Xcode projects instead sync these resources into the app before signing.
+ - It also bundles a standard font (macOS's Arial Unicode, `STD_FONT=` overrides it) and the generated `nintendo_ext.ttf`.
+-- The icon is the `icon.jpg` that `nx_extract` saves next to `RomFS.img`; `DM_ICON=` points at another image.
++- The icon is the `icon.jpg` that `nx_extract` saves next to `RomFS.img`; `DM_ICON=` points at another image. The NSP script's `--icon` sets it for the IPA and the Mac app alike.
+ - `DM_ENV_FILE=` bakes environment switches into the app, and `DM_DISPLAY_NAME=` renames it.
+ - The optional compiler definition `DM_PLAYER_BUILD=1` makes the iOS app ignore saved NVN diagnostic/renderer overrides, test switches, Metal validation switches and scripted input/capture controls from environment files. It also ignores a saved shader-library path so the app uses the new bundle's libraries. FPS and Metal HUD switches, frame rate, console mode, language and controller settings remain available. `DM_NVN_ENC_THREAD` is also retained: it selects direct/deferred encoding without enabling profiling, validation or dumps. Normal builds keep the existing environment-file behavior. This allows a player IPA to update a previously profiled installation without deleting its saved environment file or saves.
+ - In that player build, settings declared in `dm/launcher.json` are controlled by the launcher and its saved choices; environment files cannot lock those rows. The raw `MTL_HUD_ENABLED` override is ignored when the launcher offers the Metal HUD control. `DM_METAL_HUD` supplied to the build sets its initial launcher default, while the control stays editable.
+diff --git a/scripts/build_ipa_from_nsp.py b/scripts/build_ipa_from_nsp.py
+index 2e14ed94..09831762 100755
+--- a/scripts/build_ipa_from_nsp.py
++++ b/scripts/build_ipa_from_nsp.py
+@@ -2989,6 +2989,15 @@ def mac_pso(py, repo, work, lib, g, gpus, env, logs):
+     return out
+ 
+ 
++def app_icon(custom, *dirs):
++    """The app's icon: the picture --icon names, else the game icon nx_extract saved from the control data (English, icon.jpg), the packed version's first, then the base game's. None without either"""
++    if custom:
++        p = Path(os.path.expanduser(custom)).resolve()
++        if not p.is_file(): raise BuildError(f'no icon picture at {p} (--icon)')
++        say(f'app icon: {p} (--icon, instead of the game\'s own)'); return p
++    return next((d / 'icon.jpg' for d in dirs if (d / 'icon.jpg').exists()), None)
++
++
+ def mac_app_name(name):   # the app's file name: the game name with the characters Finder shows otherwise (':' and '/') as ' - '
+     return re.sub(r'\s*[:/]\s*', ' - ', name).strip(' .-') or 'nxnative'
+ 
+@@ -3063,6 +3072,7 @@ def parse_args(argv):
+     ap.add_argument('--keep-extracted', action=argparse.BooleanOptionalAction, help='keep the extracted game files after the IPA is built, for the next build (default: the KEEP_EXTRACTED setting, on)')
+     ap.add_argument('--work-dir', help='the game\'s build folder, used as it is (default: the WORK_DIR setting, else <title ID>_build in the NSP folder); the extracted files, shader cache and temporary files live there, and the IPA or Mac app defaults to the folder holding it')
+     ap.add_argument('--env-file', help='environment switches for a diagnostic build (one KEY=VALUE per line)')
++    ap.add_argument('--icon', metavar='IMAGE', help='the app\'s icon: a PNG, JPEG or HEIC picture used instead of the game\'s own (default: the game\'s icon from its control data); a square picture of 1024x1024 looks best, another shape is stretched to a square')
+     ap.add_argument('--gpu', help='NVN games: GPU architectures the app gets its pipeline archive for, made on this Mac with metal-tt, comma-separated: g18p (A19 / A19 Pro), or the name a device\'s log gives when the app has no archive for its GPU; '
+                     'none = no archive, the device builds the bases on its first start (default: the PSO_GPUS setting; when that is empty, a profile with pso_mtl4 on uses its pso_gpu key or g18p, and other profiles use none). '
+                     'With --platform mac-app: the Mac app\'s archive, by default for this Mac\'s GPU (none: the app builds the bases on its first start)')
+@@ -3445,7 +3455,7 @@ def main(args=None):
+         if observed_glslc is not None: check_glslc_coverage(observed_glslc, g)
+         seen = seen_keys(g, sh, seen_logs(work, app)) if seen_shaders else None
+         ios = build_shaders(py, repo, sh, xlate, env, logs, g, pkey, mac, seen, None if mac else ios_wants_pulling(g, ios_gpus((args.gpu or PSO_GPUS).strip(), g), prepare_xcode, env))
+-    icon = next((d / 'icon.jpg' for d in (game, base) if (d / 'icon.jpg').exists()), None)   # the game icon nx_extract saved from the control data (English, icon.jpg); the packed version's first, then the base game's
++    icon = app_icon(args.icon, game, base)
+     motion = MOTION if args.motion is None else args.motion
+     jit = uses_jit(game / 'ExeFS')
+     if jit and not mac and not mac_pack: capture_jit(py, repo, game, patched, work, env, logs, g)   # the iPhone runs no code made at run time: it serves the plugin's output from an image

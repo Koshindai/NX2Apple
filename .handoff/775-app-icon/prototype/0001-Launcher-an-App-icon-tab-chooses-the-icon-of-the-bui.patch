@@ -1,0 +1,1143 @@
+From a74b0dcd79572bf6609f34ed0b8ca3e0bcf12404 Mon Sep 17 00:00:00 2001
+From: Koshindai <97556702+Koshindai@users.noreply.github.com>
+Date: Sat, 31 Oct 2026 15:22:56 +0100
+Subject: [PATCH] Launcher: an App icon tab chooses the icon of the built app
+
+The artwork panel gets a third tab. It offers the game's own icon (when
+the last build's extraction still has it), the eShop icon (downloaded
+on demand) and the player's own square images, with Dock and iPhone
+previews of the choice. The library dims while it is open, since it
+does not show the icon.
+
+A build passes the chosen icon to the engine as DM_ICON, for the IPA
+and the Mac app alike. The game's own icon, or a file that is gone,
+leaves it unset. After saving a new icon for a game already built, the
+hero says "New app icon at the next build" beside the Rebuild capsule,
+until the game is rebuilt or another game is selected.
+
+Depends on the DM_ICON patch (0034).
+---
+ frontend-qt/nspb_qt/localization.py           |   9 +
+ .../Sources/NSPortBuilder/ArtworkEditor.swift | 140 +++++++--
+ .../Sources/NSPortBuilder/ArtworkImport.swift |   5 +-
+ .../Sources/NSPortBuilder/ArtworkPanel.swift  |  54 +++-
+ .../Sources/NSPortBuilder/ContentView.swift   |   4 +
+ .../Sources/NSPortBuilder/LauncherView.swift  |  19 +-
+ frontend/Sources/NSPortBuilder/Library.swift  |  29 ++
+ .../Sources/NSPortBuilder/Localization.swift  |  27 ++
+ .../ArtworkEditorTests.swift                  | 282 +++++++++++++++++-
+ .../ArtworkPanelTests.swift                   |  29 ++
+ .../GermanLocalizationTests.swift             |   2 +-
+ 11 files changed, 557 insertions(+), 43 deletions(-)
+
+diff --git a/frontend-qt/nspb_qt/localization.py b/frontend-qt/nspb_qt/localization.py
+index 0980ce7c..4a3ba7b2 100644
+--- a/frontend-qt/nspb_qt/localization.py
++++ b/frontend-qt/nspb_qt/localization.py
+@@ -410,6 +410,7 @@ TABLE: dict[str, tuple[str, str, str, str]] = {
+     'library.olderToolsHelp': ('这个游戏构建之后，构建工具有了会影响它的更改。重新构建即可用上这些更改。', 'The build tools changed in ways that affect this game since it was built. Rebuild it to get the changes.', 'Byggverktygen har ändrats på ett sätt som påverkar spelet sedan det byggdes. Bygg om det för att få ändringarna.', 'Die Build-Werkzeuge haben sich seit dem Build so geändert, dass es dieses Spiel betrifft. Baue es neu, um die Änderungen zu bekommen.'),
+     'library.rebuild': ('用当前工具重新构建…', 'Rebuild with current tools…', 'Bygg om med aktuella verktyg …', 'Mit aktuellen Werkzeugen neu bauen …'),
+     'library.rebuildShort': ('重新构建', 'Rebuild', 'Bygg om', 'Neu bauen'),
++    'library.iconNextBuild': ('下次构建时使用新的应用图标', 'New app icon at the next build', 'Ny appikon vid nästa bygge', 'Neues App-Symbol beim nächsten Build'),
+     'library.buildForMac': ('为 Mac 构建', 'Build for Mac', 'Bygg för Mac', 'Für Mac bauen'),
+     'library.newBuild': ('构建游戏', 'Build game', 'Bygg spel', 'Spiel bauen'),
+     'library.firstBuild': ('构建第一个游戏', 'Build your first game', 'Bygg ditt första spel', 'Erstes Spiel bauen'),
+@@ -453,6 +454,14 @@ TABLE: dict[str, tuple[str, str, str, str]] = {
+     'artwork.framing.center': ('居中', 'Center', 'Centrera', 'Zentrieren'),
+     'artwork.framing.point': ('要保持可见的位置', 'Point to keep visible', 'Punkt som ska vara synlig', 'Sichtbar zu haltender Punkt'),
+     'artwork.framing.hint': ('使用方向键移动它。', 'Use the arrow keys to move it.', 'Flytta den med piltangenterna.', 'Mit den Pfeiltasten verschieben.'),
++    'artwork.tab.icon': ('应用图标', 'App icon', 'Appikon', 'App-Symbol'),
++    'artwork.gameIcon': ('游戏图标', 'Game icon', 'Spelikon', 'Spielsymbol'),
++    'artwork.eshopIcon': ('eShop 图标', 'eShop icon', 'eShop-ikon', 'eShop-Symbol'),
++    'artwork.preview.dock': ('程序坞', 'Dock', 'Dock', 'Dock'),
++    'artwork.preview.iphone': ('iPhone', 'iPhone', 'iPhone', 'iPhone'),
++    'artwork.reset.icon': ('重置图标', 'Reset icon', 'Återställ ikon', 'Symbol zurücksetzen'),
++    'artwork.grid.icon': ('应用图标选项', 'App icon choices', 'Val av appikon', 'Auswahl des App-Symbols'),
++    'artwork.dropHint.icon': ('松开以用作应用图标', 'Drop to use as the app icon', 'Släpp för att använda som appikon', 'Zum Verwenden als App-Symbol ablegen'),
+     'library.viewBuild': ('查看构建', 'View build', 'Visa bygge', 'Build ansehen'),
+     'library.preparing': ('正在准备游戏…', 'Preparing your game…', 'Förbereder spelet …', 'Dein Spiel wird vorbereitet …'),
+     'library.remove': ('从游戏库移除', 'Remove from collection', 'Ta bort från samlingen', 'Aus Sammlung entfernen'),
+diff --git a/frontend/Sources/NSPortBuilder/ArtworkEditor.swift b/frontend/Sources/NSPortBuilder/ArtworkEditor.swift
+index 89f30d6c..509d8031 100644
+--- a/frontend/Sources/NSPortBuilder/ArtworkEditor.swift
++++ b/frontend/Sources/NSPortBuilder/ArtworkEditor.swift
+@@ -16,6 +16,8 @@ struct ArtworkEditorEnvironment {
+     /// The size the image is drawn at (upright, as ArtworkImages decodes it). Called off the main thread.
+     var pixelSize: (_ file: URL) -> CGSize?
+     var removeFile: (_ file: URL) -> Void
++    /// The icon nx_extract saved for the game, when the launcher can find it before a build.
++    var gameIcon: (_ game: LibraryGame) -> URL? = { _ in nil }
+ 
+     static func live(store: ArtworkStore) -> ArtworkEditorEnvironment {
+         ArtworkEditorEnvironment(
+@@ -33,11 +35,12 @@ struct ArtworkEditorEnvironment {
+                 let turned = (properties[kCGImagePropertyOrientation] as? Int ?? 1) >= 5   // a sideways photo is drawn upright
+                 return turned ? CGSize(width: height, height: width) : CGSize(width: width, height: height)
+             },
+-            removeFile: { try? FileManager.default.removeItem(at: $0) })
++            removeFile: { try? FileManager.default.removeItem(at: $0) },
++            gameIcon: { GameLibrary.gameIcon(of: $0) })
+     }
+ }
+ 
+-/// The state behind the artwork panel, with no views: what the player may choose for a game's hero and thumbnail, what they chose so far
++/// The state behind the artwork panel, with no views: what the player may choose for a game's hero, thumbnail and app icon, what they chose so far
+ /// (a draft the library shows as a preview), and what Save and Cancel do with it. The library is only written by `save`.
+ @MainActor final class ArtworkEditor: ObservableObject {
+     /// The grid is four tiles wide.
+@@ -49,6 +52,8 @@ struct ArtworkEditorEnvironment {
+     static let heroBandAspect: CGFloat = 2.4
+     /// The cards of the library and the console covers are 1.8 : 1.
+     static let thumbnailBandAspect: CGFloat = 1.8
++    /// An icon is cut square from the shorter side (ArtworkImport), so its tiles are 1 : 1.
++    static let iconAspect: CGFloat = 1
+ 
+     enum LoadState: Equatable { case loading, loaded, offline, none }
+     enum Notice: Equatable { case warning(String), error(String) }
+@@ -81,10 +86,18 @@ struct ArtworkEditorEnvironment {
+     let gameName: String
+     private let titleID: String
+     private let importDirectory: URL
++    private let gameIconFile: URL?
+     private let env: ArtworkEditorEnvironment
+     private let labels: (String) -> String
+ 
+-    @Published var slot: ArtworkSlot { didSet { if slot != oldValue { notice = nil; cursor = tiles.firstIndex { $0.isSelected } } } }
++    @Published var slot: ArtworkSlot {
++        didSet {
++            guard slot != oldValue else { return }
++            notice = nil
++            cursor = tiles.firstIndex { $0.isSelected }
++            if slot == .icon, loadState == .loaded, iconTask == nil { iconTask = Task { await fetchIcon() } }   // the eShop icon, once the tab is open
++        }
++    }
+     @Published private(set) var original: GameArtwork
+     @Published private(set) var draft: GameArtwork
+     @Published private(set) var loadState = LoadState.loading
+@@ -103,24 +116,26 @@ struct ArtworkEditorEnvironment {
+     @Published private var importURLs: [String: URL] = [:]
+     @Published private var pixelWidths: [String: Int] = [:]
+     @Published private var pixelSizes: [URL: CGSize] = [:]   // of the images the framing was asked for
++    private var importKinds: [String: Set<ArtworkImport.Kind>] = [:]   // the tab each file was imported on this session
+     private var sessionImports: Set<String> = []   // made while the panel was open: Cancel removes those the saved artwork does not use
+     private var loadTask: Task<Void, Never>?
++    private var iconTask: Task<Void, Never>?   // the eShop icon, fetched when the icon tab first opens after the list
+     private var closed = false
+ 
+-    /// `slot` is the tab the panel opens on: the hero or the thumbnail.
++    /// `slot` is the tab the panel opens on.
+     init(game: LibraryGame, slot: ArtworkSlot = .hero, artworkDirectory: URL, env: ArtworkEditorEnvironment, labels: @escaping (String) -> String) {
+-        precondition(slot != .icon, "the app icon has no tab yet")
+         gameID = game.id
+         gameName = game.name
+         titleID = game.titleID
+         importDirectory = ArtworkStore.customDirectory(for: game.id, in: artworkDirectory)
++        gameIconFile = env.gameIcon(game)
+         self.env = env
+         self.labels = labels
+         self.slot = slot
+         original = game.artwork
+         draft = game.artwork
+         bannerFile = env.banner(game.titleID)
+-        importedFiles = [game.artwork.hero, game.artwork.thumbnail].compactMap { if case .imported(let name)? = $0?.source { return name } else { return nil } }
++        importedFiles = [game.artwork.hero, game.artwork.thumbnail, game.artwork.icon].compactMap { if case .imported(let name)? = $0?.source { return name } else { return nil } }
+         for name in importedFiles {   // a name in the game's folder, never a path
+             let url = importDirectory.appendingPathComponent(name)
+             if name == url.lastPathComponent, FileManager.default.fileExists(atPath: url.path) { importURLs[name] = url }
+@@ -128,7 +143,7 @@ struct ArtworkEditorEnvironment {
+         cursor = tiles.firstIndex { $0.isSelected }
+     }
+ 
+-    deinit { loadTask?.cancel() }
++    deinit { loadTask?.cancel(); iconTask?.cancel() }
+ 
+     // MARK: What the panel shows
+ 
+@@ -138,7 +153,7 @@ struct ArtworkEditorEnvironment {
+         switch slot {
+         case .hero: return draft.hero != nil
+         case .thumbnail: return draft.thumbnail != nil
+-        case .icon: return false
++        case .icon: return draft.icon != nil
+         }
+     }
+ 
+@@ -150,19 +165,42 @@ struct ArtworkEditorEnvironment {
+ 
+     private var heroSource: ArtworkChoice.Source? { draft.hero?.source ?? defaultHero }
+ 
++    /// The game's own icon is the icon's default, when the launcher can find it.
++    private var defaultIcon: ArtworkChoice.Source? { gameIconFile == nil ? nil : .gameIcon }
++
+     private var selectedSource: ArtworkChoice.Source? {
+-        slot == .thumbnail ? (draft.thumbnail?.source ?? heroSource) : heroSource
++        switch slot {
++        case .hero: return heroSource
++        case .thumbnail: return draft.thumbnail?.source ?? heroSource
++        case .icon: return draft.icon?.source ?? defaultIcon
++        }
++    }
++
++    /// The tab a file of the player's belongs to is the slot that made or uses it, not what its name ends in: one the artwork refers to
++    /// as the icon, or imported on the icon tab, is the icon's, and likewise for the hero and the thumbnail. A file used by both shows on both.
++    private func isOnThisTab(_ name: String) -> Bool {
++        let toIcon = slot == .icon
++        let source = ArtworkChoice.Source.imported(name)
++        let referenced = [original, draft].contains { toIcon ? $0.icon?.source == source : ($0.hero?.source == source || $0.thumbnail?.source == source) }
++        let kinds = importKinds[name] ?? []
++        return referenced || (toIcon ? kinds.contains(.icon) : !kinds.isDisjoint(with: [.hero, .thumbnail]))
+     }
+ 
+-    /// The banner, the screenshots, then the game's own images. The "Choose file…" tile is the view's.
++    /// The banner, the screenshots, then the game's own images. The icon tab has the game's icon, the eShop icon, then the game's own
++    /// images. The "Choose file…" tile is the view's.
+     var tiles: [Tile] {
+         var sources: [(ArtworkChoice.Source, URL?)] = []
+-        if let bannerFile { sources.append((.banner, bannerFile)) }
+-        for n in (media?.screenshots.indices).map({ Array($0) }) ?? [] {
+-            let source = ArtworkChoice.Source.screenshot(n)
+-            sources.append((source, downloaded[source]))
++        if slot == .icon {
++            if let gameIconFile { sources.append((.gameIcon, gameIconFile)) }
++            if media?.icon != nil { sources.append((.eshopIcon, downloaded[.eshopIcon])) }
++        } else {
++            if let bannerFile { sources.append((.banner, bannerFile)) }
++            for n in (media?.screenshots.indices).map({ Array($0) }) ?? [] {
++                let source = ArtworkChoice.Source.screenshot(n)
++                sources.append((source, downloaded[source]))
++            }
+         }
+-        for name in importedFiles { sources.append((.imported(name), importURLs[name])) }
++        for name in importedFiles where isOnThisTab(name) { sources.append((.imported(name), importURLs[name])) }
+         let selected = selectedSource, hero = heroSource, kind = importKind
+         return sources.map { source, file in
+             var low = false
+@@ -181,16 +219,27 @@ struct ArtworkEditorEnvironment {
+         switch tile.source {
+         case .banner: parts = [labels("artwork.banner")]
+         case .screenshot(let n): parts = [String(format: labels("artwork.screenshot"), n + 1)]
+-        case .imported, .eshopIcon, .gameIcon: parts = [labels("artwork.yours")]
++        case .imported: parts = [labels("artwork.yours")]
++        case .eshopIcon: parts = [labels("artwork.eshopIcon")]
++        case .gameIcon: parts = [labels("artwork.gameIcon")]
+         }
+         if tile.isHero { parts.append(labels("artwork.heroBadge")) }
+         if tile.isLowResolution { parts.append(labels("artwork.lowResBadge")) }
+         return parts.joined(separator: ", ")
+     }
+ 
+-    var gridLabel: String { labels(slot == .hero ? "artwork.grid.hero" : "artwork.grid.thumbnail") }
++    var gridLabel: String { labels("artwork.grid." + slot.rawValue) }
++
++    /// The tiles' width over their height.
++    var tileAspect: CGFloat { slot == .icon ? Self.iconAspect : 16 / 9 }
+ 
+-    private var importKind: ArtworkImport.Kind { slot == .thumbnail ? .thumbnail : .hero }
++    private var importKind: ArtworkImport.Kind {
++        switch slot {
++        case .hero: return .hero
++        case .thumbnail: return .thumbnail
++        case .icon: return .icon
++        }
++    }
+ 
+     // MARK: Choosing
+ 
+@@ -201,7 +250,7 @@ struct ArtworkEditorEnvironment {
+         switch slot {
+         case .hero: draft.hero = draft.hero?.source == tile.source ? draft.hero : ArtworkChoice(source: tile.source)
+         case .thumbnail: draft.thumbnail = tile.isHero ? nil : (draft.thumbnail?.source == tile.source ? draft.thumbnail : ArtworkChoice(source: tile.source))
+-        case .icon: return false
++        case .icon: draft.icon = tile.source == .gameIcon ? nil : (draft.icon?.source == tile.source ? draft.icon : ArtworkChoice(source: tile.source))
+         }
+         cursor = tiles.firstIndex { $0.id == tile.id }
+         return true
+@@ -241,7 +290,7 @@ struct ArtworkEditorEnvironment {
+     var framingBand: CGSize { CGSize(width: slot == .hero ? heroAspect : Self.thumbnailBandAspect, height: 1) }
+ 
+     /// The chosen image is cut by 5 % or more in the slot's band: only then is a point worth choosing.
+-    var needsFraming: Bool { framingImageSize.map { ArtworkFraming.needsFraming(image: $0, band: framingBand) } ?? false }
++    var needsFraming: Bool { slot != .icon && framingImageSize.map { ArtworkFraming.needsFraming(image: $0, band: framingBand) } ?? false }
+ 
+     /// The point the slot's crop keeps. A thumbnail that follows the hero shows the hero's.
+     var focus: ArtworkFocus { draft.choice(for: slot)?.focus ?? .center }
+@@ -293,7 +342,7 @@ struct ArtworkEditorEnvironment {
+         switch slot {
+         case .hero: draft.hero = nil
+         case .thumbnail: draft.thumbnail = nil
+-        case .icon: return
++        case .icon: draft.icon = nil
+         }
+         cursor = tiles.firstIndex { $0.isSelected }
+     }
+@@ -311,7 +360,7 @@ struct ArtworkEditorEnvironment {
+         loadTask = Task { await load(retrying: true) }
+     }
+ 
+-    /// The screenshots are listed, then downloaded one by one: their tiles are there from the list, empty until the file arrives.
++    /// The screenshots and the eShop icon are listed, then downloaded one by one: their tiles are there from the list, empty until the file arrives.
+     func load(retrying: Bool = false) async {
+         loadState = .loading
+         let env = env
+@@ -327,8 +376,8 @@ struct ArtworkEditorEnvironment {
+         case .loaded(let found):
+             media = found
+             loadState = .loaded
+-            for n in found.screenshots.indices {
+-                let source = ArtworkChoice.Source.screenshot(n)
++            if slot == .icon { await fetchIcon() }   // the other tabs never show it: it waits for the icon tab
++            for source in found.screenshots.indices.map({ ArtworkChoice.Source.screenshot($0) }) {
+                 if let file = env.cachedCandidate(source, titleID) { downloaded[source] = file; continue }
+                 do {
+                     let file = try await env.candidate(source, titleID)
+@@ -343,6 +392,20 @@ struct ArtworkEditorEnvironment {
+         if cursor == nil { cursor = tiles.firstIndex { $0.isSelected } }
+     }
+ 
++    /// Downloads the eShop icon the list names, unless it is there or failed already.
++    private func fetchIcon() async {
++        guard media?.icon != nil, downloaded[.eshopIcon] == nil, !failed.contains(.eshopIcon) else { return }
++        if let file = env.cachedCandidate(.eshopIcon, titleID) { downloaded[.eshopIcon] = file; return }
++        do {
++            let file = try await env.candidate(.eshopIcon, titleID)
++            guard !closed, !Task.isCancelled else { return }
++            downloaded[.eshopIcon] = file
++        } catch {
++            guard !closed, !Task.isCancelled else { return }
++            failed.insert(.eshopIcon)
++        }
++    }
++
+     // MARK: The player's own file
+ 
+     /// Copies a chosen file into the game's folder (ArtworkImport, off the main thread) and chooses it for the slot. A file that is
+@@ -359,10 +422,12 @@ struct ArtworkEditorEnvironment {
+             }
+             if !importedFiles.contains(name) { importedFiles.append(name) }
+             importURLs[name] = prepared.url
+-            pixelWidths[name] = Int(prepared.pixelSize.width)
++            let width = prepared.sourceWidth ?? Int(prepared.pixelSize.width)
++            pixelWidths[name] = width
+             sessionImports.insert(name)
++            importKinds[name, default: []].insert(kind)
+             if let tile = tiles.first(where: { $0.source == .imported(name) }) { select(tile) }
+-            if prepared.lowResolution { notice = .warning(String(format: labels("artwork.lowResWarning"), Int(prepared.pixelSize.width))) }
++            if prepared.lowResolution { notice = .warning(String(format: labels("artwork.lowResWarning"), width)) }
+         case .failure(let error):
+             guard !closed else { return }
+             notice = .error((error as? ArtworkImport.Failure).map { labels($0.messageKey) } ?? error.localizedDescription)
+@@ -371,10 +436,15 @@ struct ArtworkEditorEnvironment {
+ 
+     // MARK: Leaving
+ 
++    /// The last Save changed the app icon: a game that is built keeps the old one until it is built again.
++    private(set) var savedIconChange = false
++
+     /// Writes the draft to the library, which also removes the copies no slot uses any more.
+     @discardableResult func save(to library: GameLibrary) -> Bool {
+         guard isDirty else { return false }
++        savedIconChange = draft.icon != original.icon
+         closed = true
++        iconTask?.cancel()
+         loadTask?.cancel()
+         library.setArtwork(draft, for: gameID)
+         original = draft
+@@ -384,6 +454,7 @@ struct ArtworkEditorEnvironment {
+     /// Leaves the library as it was. A copy made while the panel was open that the saved artwork does not use is removed.
+     func cancel() {
+         closed = true
++        iconTask?.cancel()
+         loadTask?.cancel()
+         for name in sessionImports where !original.importedFiles.contains(name) {
+             if let url = importURLs[name] { env.removeFile(url) }
+@@ -391,3 +462,20 @@ struct ArtworkEditorEnvironment {
+         sessionImports = []
+     }
+ }
++
++/// The hero's note "New app icon at the next build": the game it is for. It is set by a Save that changed the icon of a game that is
++/// built, and goes when that game is built again or another game is selected.
++struct IconNote: Equatable {
++    private(set) var game: UUID?
++
++    /// `iconChanged` is the editor's `savedIconChange`.
++    mutating func saved(iconChanged: Bool, game built: LibraryGame) {
++        if iconChanged && built.hasBuild { game = built.id }
++    }
++
++    mutating func selected(_ id: UUID?) { if id != game { game = nil } }
++
++    mutating func rebuilt(_ id: UUID) { if game == id { game = nil } }
++
++    func shows(for id: UUID) -> Bool { game == id }
++}
+diff --git a/frontend/Sources/NSPortBuilder/ArtworkImport.swift b/frontend/Sources/NSPortBuilder/ArtworkImport.swift
+index 77fa0c3c..1eb4f12b 100644
+--- a/frontend/Sources/NSPortBuilder/ArtworkImport.swift
++++ b/frontend/Sources/NSPortBuilder/ArtworkImport.swift
+@@ -45,6 +45,8 @@ enum ArtworkImport {
+         let url: URL
+         let pixelSize: CGSize
+         let lowResolution: Bool
++        /// The width of the picture before it was cut and scaled to what is stored, for the warning: nil when pixelSize says it.
++        var sourceWidth: Int?
+     }
+ 
+     static let maxFileSize = 50 << 20
+@@ -87,7 +89,8 @@ enum ArtworkImport {
+             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+             try (data as Data).write(to: stored, options: .atomic)   // a temporary file beside it, then a move
+         }
+-        return Prepared(url: stored, pixelSize: CGSize(width: image.width, height: image.height), lowResolution: lowResolution)
++        return Prepared(url: stored, pixelSize: CGSize(width: image.width, height: image.height), lowResolution: lowResolution,
++                        sourceWidth: kind == .icon ? min(decoded.width, decoded.height) : nil)
+     }
+ 
+     /// The pixels as they are stored: an icon cut square from the centre at 1024, anything with transparency laid on black
+diff --git a/frontend/Sources/NSPortBuilder/ArtworkPanel.swift b/frontend/Sources/NSPortBuilder/ArtworkPanel.swift
+index f1b3210c..a9e2eb8c 100644
+--- a/frontend/Sources/NSPortBuilder/ArtworkPanel.swift
++++ b/frontend/Sources/NSPortBuilder/ArtworkPanel.swift
+@@ -2,11 +2,11 @@ import SwiftUI
+ import UniformTypeIdentifiers
+ 
+ /// The artwork editor's panel (design C): a column beside the library, which stays visible behind it as the live preview of the
+-/// editor's draft. Hero and Thumbnail tabs, a grid of the images the game has (the eShop banner and screenshots, the player's own
++/// editor's draft. Hero, Thumbnail and App icon tabs, a grid of the images the game has (the eShop banner and screenshots or the app icons, the player's own
+ /// files), Reset, Cancel and Save. The state is `ArtworkEditor`, so this is only the view.
+ struct ArtworkPanel: View {
+     static let width: CGFloat = 420
+-    private static let slots: [ArtworkSlot] = [.hero, .thumbnail]
++    private static let slots: [ArtworkSlot] = [.hero, .thumbnail, .icon]
+ 
+     @ObservedObject var editor: ArtworkEditor
+     let labels: (String) -> String
+@@ -19,7 +19,7 @@ struct ArtworkPanel: View {
+     @FocusState private var framingFocused: Bool
+ 
+     private func t(_ key: String) -> String { labels(key) }
+-    private var slotName: String { editor.slot == .hero ? "hero" : "thumbnail" }
++    private var slotName: String { editor.slot.rawValue }
+ 
+     var body: some View {
+         VStack(alignment: .leading, spacing: 0) {
+@@ -36,6 +36,7 @@ struct ArtworkPanel: View {
+                     if editor.loadState == .offline { offline }
+                     if let notice = editor.notice { noticeRow(notice) }
+                     if editor.needsFraming { framing }
++                    if editor.slot == .icon { iconPreviews }
+                 }
+                 .padding(.horizontal, 24).padding(.vertical, 4)
+                 .task(id: editor.selectedFile) { await editor.measureSelected() }
+@@ -61,7 +62,7 @@ struct ArtworkPanel: View {
+         HStack(spacing: 6) {
+             ForEach(Self.slots, id: \.self) { slot in
+                 let on = editor.slot == slot
+-                let title = t("artwork.tab." + (slot == .hero ? "hero" : "thumbnail"))
++                let title = t("artwork.tab." + slot.rawValue)
+                 Button { editor.slot = slot } label: {
+                     ZStack {
+                         Text(title).font(.manrope(14, .bold)).hidden()
+@@ -83,7 +84,7 @@ struct ArtworkPanel: View {
+     private var grid: some View {
+         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: ArtworkEditor.columns), spacing: 8) {
+             ForEach(editor.tiles) { tile in tileButton(tile) }
+-            if editor.isLoading { ForEach(0..<ArtworkStore.maxScreenshots, id: \.self) { _ in SkeletonTile(animated: !reduceMotion) } }
++            if editor.isLoading { ForEach(0..<ArtworkStore.maxScreenshots, id: \.self) { _ in SkeletonTile(animated: !reduceMotion, aspect: editor.tileAspect) } }
+             chooseFile
+         }
+         .focusable()
+@@ -113,7 +114,7 @@ struct ArtworkPanel: View {
+ 
+     private func tileButton(_ tile: ArtworkEditor.Tile) -> some View {
+         Button { editor.select(tile) } label: {
+-            Color.clear.aspectRatio(16 / 9, contentMode: .fit)
++            Color.clear.aspectRatio(editor.tileAspect, contentMode: .fit)
+                 .overlay {
+                     if let file = tile.file, let image = ArtworkImages.shared.image(at: file, maxPixel: 480) {
+                         ArtworkFill(image: image)
+@@ -146,7 +147,7 @@ struct ArtworkPanel: View {
+     /// The last cell. It opens the file picker, which a controller cannot use: it is no pad target.
+     private var chooseFile: some View {
+         Button(action: pickFile) {
+-            Color.clear.aspectRatio(16 / 9, contentMode: .fit)
++            Color.clear.aspectRatio(editor.tileAspect, contentMode: .fit)
+                 .overlay {
+                     VStack(spacing: 3) {
+                         Image(systemName: "folder").font(.system(size: 14, weight: .light))
+@@ -169,6 +170,40 @@ struct ArtworkPanel: View {
+         Task { await editor.importFile(url) }
+     }
+ 
++    // MARK: The icon's previews
++
++    /// The chosen icon as the Mac's Dock and the iPhone's Home Screen draw it, each on a dim wallpaper-ish tile.
++    private var iconPreviews: some View {
++        HStack(alignment: .top, spacing: 12) {
++            iconPreview(title: t("artwork.preview.dock"), side: 64, radius: 64 * 0.225, style: .circular,
++                        wallpaper: [Color(red: 0.23, green: 0.23, blue: 0.25), Color(red: 0.12, green: 0.12, blue: 0.14)])
++            iconPreview(title: t("artwork.preview.iphone"), side: 60, radius: 60 * 0.2237, style: .continuous,
++                        wallpaper: [Color(red: 0.14, green: 0.20, blue: 0.29), Color(red: 0.23, green: 0.14, blue: 0.25)])
++        }
++        .accessibilityElement(children: .contain)
++    }
++
++    private func iconPreview(title: String, side: CGFloat, radius: CGFloat, style: RoundedCornerStyle, wallpaper: [Color]) -> some View {
++        VStack(spacing: 8) {
++            ZStack {
++                RoundedRectangle(cornerRadius: 14, style: .continuous).fill(LinearGradient(colors: wallpaper, startPoint: .top, endPoint: .bottom))
++                Group {
++                    if let file = editor.selectedFile, let image = ArtworkImages.shared.image(at: file, maxPixel: 256) {
++                        Image(nsImage: image).resizable().scaledToFill()
++                    } else {
++                        Color.white.opacity(0.12)
++                    }
++                }
++                .frame(width: side, height: side)
++                .clipShape(RoundedRectangle(cornerRadius: radius, style: style))
++            }
++            .frame(height: 96)
++            Text(title).font(.manrope(12)).foregroundStyle(.secondary)
++        }
++        .frame(maxWidth: .infinity)
++        .accessibilityElement(children: .combine)
++    }
++
+     // MARK: Framing
+ 
+     private static let framingHeight: CGFloat = 190
+@@ -330,15 +365,16 @@ struct ArtworkPanel: View {
+     }
+ }
+ 
+-/// A tile waiting for the list: a dim 16:9 block that breathes, or stands still under Reduce Motion.
++/// A tile waiting for the list: a dim block of the grid's proportions that breathes, or stands still under Reduce Motion.
+ private struct SkeletonTile: View {
+     let animated: Bool
++    let aspect: CGFloat
+     @State private var lit = false
+ 
+     var body: some View {
+         RoundedRectangle(cornerRadius: 5)
+             .fill(Color.white.opacity(lit ? 0.10 : 0.05))
+-            .aspectRatio(16 / 9, contentMode: .fit)
++            .aspectRatio(aspect, contentMode: .fit)
+             .accessibilityHidden(true)
+             .onAppear {
+                 guard animated else { return }
+diff --git a/frontend/Sources/NSPortBuilder/ContentView.swift b/frontend/Sources/NSPortBuilder/ContentView.swift
+index a3ea2e67..fa0acf4d 100644
+--- a/frontend/Sources/NSPortBuilder/ContentView.swift
++++ b/frontend/Sources/NSPortBuilder/ContentView.swift
+@@ -1186,6 +1186,9 @@ final class BuildModel: ObservableObject {
+ 
+     // MARK: Build
+ 
++    /// What the library adds to the build of a title (its title ID in hex and its base package): the app icon the player chose (DM_ICON). The launcher sets it.
++    var gameEnvironment: (_ titleID: String, _ basePath: String) -> [String: String] = { _, _ in [:] }
++
+     func startBuild() {
+         guard !running else { return }
+         stopping = false
+@@ -1354,6 +1357,7 @@ final class BuildModel: ObservableObject {
+         // The bundled Python lives inside the signed app: a .pyc written there would change what the signature seals
+         // (the packages are compiled at bundle time), and a user site must not shadow its pinned packages.
+         denv.merge(BundledTools.environment(for: py)) { $1 }
++        denv.merge(gameEnvironment(tidHex, basePath)) { $1 }
+         p.environment = denv
+         Self.inOwnGroup(p, python: py)
+         let pipe = Pipe()
+diff --git a/frontend/Sources/NSPortBuilder/LauncherView.swift b/frontend/Sources/NSPortBuilder/LauncherView.swift
+index c5726136..6a6fbd3b 100644
+--- a/frontend/Sources/NSPortBuilder/LauncherView.swift
++++ b/frontend/Sources/NSPortBuilder/LauncherView.swift
+@@ -59,6 +59,7 @@ struct ContentView: View {
+     @StateObject private var toolsAge: ToolsAge
+     @State private var buildCommit = ""   // the engine's commit when the running build started (ToolsAge)
+     @State private var signatureExpiry: [UUID: Date] = [:]   // installed apps' provisioning-profile expiry, per game
++    @State private var iconNote = IconNote()   // the saved icon a built game gets at its next build, said under the hero
+     @State private var resignNote: String?   // the last re-sign's outcome, shown under the hero's expiry line
+     private var performStartupChecks: Bool
+     private let onRunSetup: (() -> Void)?   // Settings' "Run setup again"; the root view supplies it
+@@ -71,7 +72,7 @@ struct ContentView: View {
+          activeBuildID: UUID? = nil, performStartupChecks: Bool = true, search: String? = nil, olderTools: Set<UUID> = [],
+          manageOpen: Bool = false, padRing: Bool = false, onRunSetup: (() -> Void)? = nil,
+          enterConsole: (() -> Void)? = nil, controllerDriver: AnyConsoleDriver? = nil, controls sharedControls: ControlLayout? = nil, qaPrompt: Bool = false,
+-         gamepad: LauncherGamepad? = nil, artworkOpen: ArtworkSlot? = nil, artworkEditor: ArtworkEditor? = nil, artworkStore: ArtworkStore = .shared) {
++         gamepad: LauncherGamepad? = nil, artworkOpen: ArtworkSlot? = nil, artworkEditor: ArtworkEditor? = nil, artworkStore: ArtworkStore = .shared, iconNote: IconNote = IconNote()) {
+         _consolePrompt = State(initialValue: qaPrompt)   // visual QA: the connect prompt open at launch
+         self.onRunSetup = onRunSetup
+         let layout = sharedControls ?? ControlLayout()
+@@ -82,6 +83,7 @@ struct ContentView: View {
+         qaManage = (manageOpen, padRing)
+         qaArtwork = artworkOpen
+         self.artworkStore = artworkStore
++        _iconNote = State(initialValue: iconNote)   // visual QA: the note under the hero
+         _artworkEditor = State(initialValue: artworkEditor)   // tests hand in one with its own environment
+         _artworkSlot = State(initialValue: artworkEditor?.slot)
+         if let search { _search = State(initialValue: search); _searching = State(initialValue: true) }   // visual QA: the bar with its field open
+@@ -185,6 +187,7 @@ struct ContentView: View {
+         .frame(minWidth: 900, idealWidth: 1280, minHeight: 680, idealHeight: 900)
+         .onAppear {
+             gamepad.perform = padAction
++            m.gameEnvironment = { [library] titleID, basePath in GameLibrary.buildEnvironment(for: library.game(forTitleID: titleID, basePath: basePath), banners: library.artworkDirectory) }
+             gamepad.capture = { [consoleDriver] id, action in consoleDriver.consumePress(controllerID: id, isBack: action == .b) }
+             if performStartupChecks { library.migrateLaunchOptions(); library.migrateArtwork(); CloudSavesMigration.run() }
+             if let slot = qaArtwork, artworkEditor == nil, let game = library.selected { openArtwork(game, slot: slot) }
+@@ -219,7 +222,7 @@ struct ContentView: View {
+         .onReceive(m.$repoBusy.removeDuplicates().dropFirst()) { busy in if !busy && performStartupChecks { checkTools() } }
+         // The engine was made or moved by a sync (its HEAD is what ToolsAge compares)
+         .onReceive(m.$engineSyncing.removeDuplicates().dropFirst()) { syncing in if !syncing && performStartupChecks { checkTools() } }
+-        .onChange(of: library.selectedID) { _ in resignNote = nil; refreshHeroArtwork() }   // the last re-sign's note belongs to its game
++        .onChange(of: library.selectedID) { id in resignNote = nil; iconNote.selected(id); refreshHeroArtwork() }   // the last re-sign's note belongs to its game
+         .onReceive(m.$running.removeDuplicates()) { running in
+             if running && activeBuildID == nil { activeBuildID = library.rememberInputs(m) }
+             if running && activeBuildID != nil {   // the tools this build runs: a pull waits for the build (pullRepo, autoPull)
+@@ -463,7 +466,7 @@ struct ContentView: View {
+             VStack(alignment: .leading, spacing: 14) {
+                 HStack(spacing: 14) {
+                     status(game, prominent: true)
+-                    if toolsAge.older.contains(game.id) && !(m.running && activeBuildID == game.id) {
++                    if (toolsAge.older.contains(game.id) || iconNote.shows(for: game.id)) && !(m.running && activeBuildID == game.id) {
+                         Button { configureBuild(game) } label: {
+                             Label(m.t("library.rebuildShort"), systemImage: "arrow.clockwise")
+                                 .font(.manrope(12, .semibold)).foregroundStyle(LauncherPalette.cream)
+@@ -472,8 +475,11 @@ struct ContentView: View {
+                                 .contentShape(Capsule())
+                         }
+                         .buttonStyle(.plain).disabled(m.running || game.inputs["base", default: []].isEmpty)
+-                        .help(m.t("library.olderToolsHelp"))
++                        .help(m.t(toolsAge.older.contains(game.id) ? "library.olderToolsHelp" : "library.iconNextBuild"))   // why it is offered
+                         .padTarget("hero.rebuild", scope: "main", radius: 12) { if !m.running { configureBuild(game) } }
++                        if iconNote.shows(for: game.id) {
++                            Text(m.t("library.iconNextBuild")).font(.manrope(12)).foregroundStyle(.secondary)
++                        }
+                     }
+                 }
+                 Text(game.name).font(.manrope(min(68, width * 0.052), .heavy))
+@@ -893,6 +899,7 @@ struct ContentView: View {
+ 
+     private func recordBuild() {
+         guard m.done, let id = activeBuildID else { return }
++        iconNote.rebuilt(id)
+         if m.target == "mac-app" { library.recordCompletedApp(path: m.macAppPath, commit: buildCommit, for: id) }
+         else { library.recordCompletedIOS(ipa: m.ipaPath, archive: m.archivePath, app: m.installedAppPath, device: m.installedOn, commit: buildCommit, for: id) }
+         refreshArtwork()
+@@ -948,7 +955,9 @@ struct ContentView: View {
+     /// Closing the panel writes the draft to the library (Save) or leaves it as it was (Cancel, Esc, B, leaving the Library page).
+     private func closeArtwork(save: Bool) {
+         guard let editor = artworkEditor else { return }
+-        if save { editor.save(to: library) } else { editor.cancel() }
++        if save {
++            if editor.save(to: library), let game = library.games.first(where: { $0.id == editor.gameID }) { iconNote.saved(iconChanged: editor.savedIconChange, game: game) }
++        } else { editor.cancel() }
+         withAnimation(.easeOut(duration: 0.18)) { artworkEditor = nil }
+         artworkSlot = nil
+         artworkPreview = nil
+diff --git a/frontend/Sources/NSPortBuilder/Library.swift b/frontend/Sources/NSPortBuilder/Library.swift
+index 8138669d..7a5578be 100644
+--- a/frontend/Sources/NSPortBuilder/Library.swift
++++ b/frontend/Sources/NSPortBuilder/Library.swift
+@@ -39,6 +39,8 @@ struct LibraryGame: Codable, Identifiable, Equatable {
+     /// the game's code), so the Cheats sheet says so for a game that has an iOS build. The switches stay usable: the same game may have a Mac build.
+     var cheatsNeedIOSNote: Bool { hasIOSBuild || onDevice }
+     var hasIOSBuild: Bool { hasIPA || hasIOSApp }
++    /// A build exists, for the Mac or an iPhone: a new app icon reaches it only with the next build.
++    var hasBuild: Bool { isReady || hasIOSBuild || onDevice }
+     var hasIPA: Bool { !ipaPath.isEmpty && FileManager.default.fileExists(atPath: ipaPath) }
+     var hasIOSApp: Bool { !iosAppPath.isEmpty && FileManager.default.fileExists(atPath: iosAppPath + "/Info.plist") }
+ 
+@@ -596,6 +598,14 @@ final class GameLibrary: ObservableObject {
+         path.hasPrefix(ArtworkStore.customDirectory(for: id, in: directory).path + "/")
+     }
+ 
++    /// The game a build is for: the one whose base package is the build's, else (a build of a file the library does not list) the
++    /// selected one with that title ID, else the first. Two entries of one title may have different icons.
++    func game(forTitleID titleID: String, basePath: String) -> LibraryGame? {
++        if !basePath.isEmpty, let game = games.first(where: { $0.inputs["base"]?.contains(basePath) == true }) { return game }
++        let games = games.filter { $0.titleID.caseInsensitiveCompare(titleID) == .orderedSame }
++        return games.first { $0.id == selectedID } ?? games.first
++    }
++
+     func setArtwork(_ artwork: GameArtwork, for id: UUID) {
+         guard var game = games.first(where: { $0.id == id }) else { return }
+         if artwork.hero != game.artwork.hero { game.artworkPath = "" }   // a hero chosen now replaces the path an earlier version kept
+@@ -679,6 +689,25 @@ final class GameLibrary: ObservableObject {
+         return url.flatMap { FileManager.default.fileExists(atPath: $0.path) ? $0 : nil }
+     }
+ 
++    /// The icon nx_extract saved for the game: `icon.jpg` in the newest version folder of the extraction the last build left in the output
++    /// folder (`<output>/<TITLEID>_build/extract/v<N>`, as startBuild lays it out). Nil when the game has no output folder of its own or
++    /// the extraction is gone: the launcher cannot know the file before a build, and the build then uses the game's icon anyway.
++    static func gameIcon(of game: LibraryGame) -> URL? {
++        guard !game.outputDirectory.isEmpty else { return nil }
++        let extract = game.outputDirectory + "/" + game.titleID.uppercased() + "_build/extract"
++        guard let version = BuildModel.extractedVersion(in: extract) else { return nil }
++        let icon = URL(fileURLWithPath: extract + "/" + version + "/icon.jpg")
++        return FileManager.default.fileExists(atPath: icon.path) ? icon : nil
++    }
++
++    /// What the game's saved artwork adds to a build's environment: DM_ICON, the file of an app icon the player chose (the downloaded
++    /// eShop icon, or their own image). The game's own icon, no choice, and a file that is gone leave it unset, so the build uses the game's icon.
++    static func buildEnvironment(for game: LibraryGame?, banners: URL = ArtworkStore.shared.directory) -> [String: String] {
++        guard let game, let choice = game.artwork.icon, choice.source != .gameIcon,
++              let file = file(for: choice, of: game, banners: banners) else { return [:] }
++        return ["DM_ICON": file.path]
++    }
++
+     /// The artwork, decoded no larger than `maxPixel` on its longer side. The hero needs the large default, a card or a
+     /// console cover `ArtworkImages.cardPixels`.
+     static func artwork(for game: LibraryGame, slot: ArtworkSlot = .hero, repo: String, banners: URL = ArtworkStore.shared.directory,
+diff --git a/frontend/Sources/NSPortBuilder/Localization.swift b/frontend/Sources/NSPortBuilder/Localization.swift
+index 62e89fbb..9aeb54e4 100644
+--- a/frontend/Sources/NSPortBuilder/Localization.swift
++++ b/frontend/Sources/NSPortBuilder/Localization.swift
+@@ -453,6 +453,7 @@ enum L10n {
+         "library.olderToolsHelp": ("这个游戏构建之后，构建工具有了会影响它的更改。重新构建即可用上这些更改。", "The build tools changed in ways that affect this game since it was built. Rebuild it to get the changes."),
+         "library.rebuild": ("用当前工具重新构建…", "Rebuild with current tools…"),
+         "library.rebuildShort": ("重新构建", "Rebuild"),
++        "library.iconNextBuild": ("下次构建时使用新的应用图标", "New app icon at the next build"),
+         "library.buildForMac": ("\u{4e3a} Mac \u{6784}\u{5efa}", "Build for Mac"),
+         "library.newBuild": ("\u{6784}\u{5efa}\u{6e38}\u{620f}", "Build game"),
+         "library.firstBuild": ("\u{6784}\u{5efa}\u{7b2c}\u{4e00}\u{4e2a}\u{6e38}\u{620f}", "Build your first game"),
+@@ -496,6 +497,14 @@ enum L10n {
+         "artwork.framing.center": ("居中", "Center"),
+         "artwork.framing.point": ("要保持可见的位置", "Point to keep visible"),
+         "artwork.framing.hint": ("使用方向键移动它。", "Use the arrow keys to move it."),
++        "artwork.tab.icon": ("应用图标", "App icon"),
++        "artwork.gameIcon": ("游戏图标", "Game icon"),
++        "artwork.eshopIcon": ("eShop 图标", "eShop icon"),
++        "artwork.preview.dock": ("程序坞", "Dock"),
++        "artwork.preview.iphone": ("iPhone", "iPhone"),
++        "artwork.reset.icon": ("重置图标", "Reset icon"),
++        "artwork.grid.icon": ("应用图标选项", "App icon choices"),
++        "artwork.dropHint.icon": ("松开以用作应用图标", "Drop to use as the app icon"),
+         "library.viewBuild": ("\u{67e5}\u{770b}\u{6784}\u{5efa}", "View build"),
+         "library.preparing": ("\u{6b63}\u{5728}\u{51c6}\u{5907}\u{6e38}\u{620f}\u{2026}", "Preparing your game\u{2026}"),
+         "library.remove": ("\u{4ece}\u{6e38}\u{620f}\u{5e93}\u{79fb}\u{9664}", "Remove from collection"),
+@@ -1373,6 +1382,7 @@ enum L10n {
+         "library.olderToolsHelp": "Byggverktygen har ändrats på ett sätt som påverkar spelet sedan det byggdes. Bygg om det för att få ändringarna.",
+         "library.rebuild": "Bygg om med aktuella verktyg …",
+         "library.rebuildShort": "Bygg om",
++        "library.iconNextBuild": "Ny appikon vid nästa bygge",
+         "library.buildForMac": "Bygg för Mac",
+         "library.newBuild": "Bygg spel",
+         "library.firstBuild": "Bygg ditt första spel",
+@@ -1416,6 +1426,14 @@ enum L10n {
+         "artwork.framing.center": "Centrera",
+         "artwork.framing.point": "Punkt som ska vara synlig",
+         "artwork.framing.hint": "Flytta den med piltangenterna.",
++        "artwork.tab.icon": "Appikon",
++        "artwork.gameIcon": "Spelikon",
++        "artwork.eshopIcon": "eShop-ikon",
++        "artwork.preview.dock": "Dock",
++        "artwork.preview.iphone": "iPhone",
++        "artwork.reset.icon": "Återställ ikon",
++        "artwork.grid.icon": "Val av appikon",
++        "artwork.dropHint.icon": "Släpp för att använda som appikon",
+         "library.viewBuild": "Visa bygge",
+         "library.preparing": "Förbereder spelet …",
+         "library.remove": "Ta bort från samlingen",
+@@ -2244,6 +2262,7 @@ enum L10n {
+         "library.olderToolsHelp": "Die Build-Werkzeuge haben sich seit dem Build so geändert, dass es dieses Spiel betrifft. Baue es neu, um die Änderungen zu bekommen.",
+         "library.rebuild": "Mit aktuellen Werkzeugen neu bauen …",
+         "library.rebuildShort": "Neu bauen",
++        "library.iconNextBuild": "Neues App-Symbol beim nächsten Build",
+         "library.buildForMac": "Für Mac bauen",
+         "library.newBuild": "Spiel bauen",
+         "library.firstBuild": "Erstes Spiel bauen",
+@@ -2287,6 +2306,14 @@ enum L10n {
+         "artwork.framing.center": "Zentrieren",
+         "artwork.framing.point": "Sichtbar zu haltender Punkt",
+         "artwork.framing.hint": "Mit den Pfeiltasten verschieben.",
++        "artwork.tab.icon": "App-Symbol",
++        "artwork.gameIcon": "Spielsymbol",
++        "artwork.eshopIcon": "eShop-Symbol",
++        "artwork.preview.dock": "Dock",
++        "artwork.preview.iphone": "iPhone",
++        "artwork.reset.icon": "Symbol zurücksetzen",
++        "artwork.grid.icon": "Auswahl des App-Symbols",
++        "artwork.dropHint.icon": "Zum Verwenden als App-Symbol ablegen",
+         "library.viewBuild": "Build ansehen",
+         "library.preparing": "Dein Spiel wird vorbereitet …",
+         "library.remove": "Aus Sammlung entfernen",
+diff --git a/frontend/Tests/NSPortBuilderTests/ArtworkEditorTests.swift b/frontend/Tests/NSPortBuilderTests/ArtworkEditorTests.swift
+index 8ec1a58d..6b71a092 100644
+--- a/frontend/Tests/NSPortBuilderTests/ArtworkEditorTests.swift
++++ b/frontend/Tests/NSPortBuilderTests/ArtworkEditorTests.swift
+@@ -1,5 +1,6 @@
+ import AppKit
+ import Combine
++import ImageIO
+ import XCTest
+ @testable import NSPortBuilder
+ 
+@@ -20,6 +21,8 @@ import XCTest
+     var failingScreenshots: Set<Int> = []
+     /// While set, the list of screenshots does not arrive.
+     var holdMedia = false
++    /// The icon the launcher finds for the game, when the test gives one.
++    var gameIconFile: URL?
+ 
+     /// `others` are more games in the library, each with a generated banner (the visual QA wants a row of cards).
+     init(banner: Bool = true, screenshots: Int = 6, saved: String = "", others: [(titleID: String, name: String)] = []) throws {
+@@ -49,8 +52,15 @@ import XCTest
+             while holdMedia && !Task.isCancelled { try? await Task.sleep(nanoseconds: 10_000_000) }
+             return mediaResults.count > 1 ? mediaResults.removeFirst() : (mediaResults.first ?? .none)
+         }
++        env.gameIcon = { [unowned self] _ in gameIconFile }
+         env.candidate = { [unowned self] source, id in
+             while holdDownloads { try await Task.sleep(nanoseconds: 10_000_000) }
++            if source == .eshopIcon {
++                let file = artwork.appendingPathComponent(id).appendingPathComponent("icon.jpg")
++                try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
++                try Self.picture(file, width: 512, height: 512, hue: 0.9, label: "eShop")
++                return file
++            }
+             guard case .screenshot(let n) = source, !failingScreenshots.contains(n) else { throw URLError(.cannotConnectToHost) }
+             let file = artwork.appendingPathComponent(id).appendingPathComponent("screenshot-\(n).jpg")
+             try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+@@ -80,6 +90,18 @@ import XCTest
+         try XCTUnwrap(rep.representation(using: type, properties: [:])).write(to: url)
+     }
+ 
++    /// The game's own icon, as nx_extract saves it: a generated 256 px square.
++    func makeGameIcon() throws {
++        let url = temporary.appendingPathComponent("game-icon.jpg")
++        try Self.picture(url, width: 256, height: 256, hue: 0.5, label: "Game")
++        gameIconFile = url
++    }
++
++    /// The title list says the game has an eShop icon (and `screenshots` screenshots).
++    func offerEshopIcon(screenshots: Int = 6) {
++        mediaResults = [.loaded(ArtworkStore.Media(screenshots: (0..<screenshots).map { "shot-\($0)" }, icon: "icon"))]
++    }
++
+     /// A file for the player to choose: `width` pixels wide, 16:9.
+     func chosenImage(width: Int, height: Int? = nil, name: String = "mine.png", hue: CGFloat = 0.6) throws -> URL {
+         let url = temporary.appendingPathComponent(name)
+@@ -426,9 +448,267 @@ final class ArtworkEditorTests: XCTestCase {
+         XCTAssertEqual(fixture.library.games[0].artwork.hero, ArtworkChoice(source: .screenshot(0), focus: ArtworkFocus(x: 0.3, y: 0.5)))
+     }
+ 
++    // MARK: The app icon tab
++
++    @MainActor private func iconEditor(gameIcon: Bool = true, eshop: Bool = true, saved: String = "") async throws -> ArtworkEditor {
++        fixture = try ArtworkFixture(saved: saved)
++        if gameIcon { try fixture.makeGameIcon() }
++        if eshop { fixture.offerEshopIcon() }
++        let editor = fixture.editor(slot: .icon)
++        await editor.load()
++        return editor
++    }
++
++    @MainActor func testTheIconTabListsTheGameIconTheEshopIconAndTheImportsSquare() async throws {
++        let editor = try await iconEditor()
++        XCTAssertEqual(editor.tiles.map(\.id), ["gameIcon", "eshopIcon"])
++        XCTAssertEqual(editor.tiles.filter(\.isSelected).map(\.id), ["gameIcon"], "the game's own icon is the default")
++        XCTAssertTrue(editor.tiles.allSatisfy(\.isAvailable), "the eShop icon arrived")
++        XCTAssertEqual(editor.tileAspect, 1)
++        XCTAssertFalse(editor.needsFraming)
++        XCTAssertEqual(editor.gridLabel, L10n.string("artwork.grid.icon", .en))
++        XCTAssertFalse(editor.isDirty)
++        await editor.importFile(try fixture.chosenImage(width: 600, height: 400, name: "wide.png"))
++        XCTAssertEqual(editor.tiles.count, 3)
++        editor.slot = .hero
++        XCTAssertFalse(editor.tiles.contains { $0.id.hasPrefix("imported.") }, "the hero tab does not list an icon")
++        editor.slot = .icon
++        XCTAssertEqual(editor.tileAspect, 1)
++    }
++
++    @MainActor func testWithoutAKnownGameIconTheTabStartsWithTheEshopIcon() async throws {
++        let editor = try await iconEditor(gameIcon: false)
++        XCTAssertEqual(editor.tiles.map(\.id), ["eshopIcon"])
++        XCTAssertTrue(editor.tiles.allSatisfy { !$0.isSelected })
++        let none = try await iconEditor(gameIcon: false, eshop: false)
++        XCTAssertTrue(none.tiles.isEmpty)
++    }
++
++    @MainActor func testTheEshopIconIsOnlyDownloadedOnceTheIconTabOpens() async throws {
++        fixture = try ArtworkFixture()
++        fixture.offerEshopIcon(screenshots: 2)
++        let editor = fixture.editor()
++        await editor.load()
++        let icon = fixture.artwork.appendingPathComponent(fixture.titleID).appendingPathComponent("icon.jpg")
++        XCTAssertFalse(FileManager.default.fileExists(atPath: icon.path), "the hero and thumbnail tabs never show it")
++        editor.slot = .icon
++        for _ in 0..<100 where !(editor.tiles.first { $0.id == "eshopIcon" }?.isAvailable ?? false) { try await Task.sleep(nanoseconds: 10_000_000) }
++        XCTAssertTrue(try XCTUnwrap(editor.tiles.first { $0.id == "eshopIcon" }).isAvailable)
++    }
++
++    @MainActor func testTheEshopIconArrivesOnDemandAndAnotherTabKeepsItsOwnTiles() async throws {
++        fixture = try ArtworkFixture()
++        fixture.offerEshopIcon(screenshots: 2)
++        fixture.holdDownloads = true
++        let editor = fixture.editor(slot: .icon)
++        let loading = Task { await editor.load() }
++        try await Task.sleep(nanoseconds: 100_000_000)
++        let tile = try XCTUnwrap(editor.tiles.first)
++        XCTAssertEqual(tile.id, "eshopIcon")
++        XCTAssertFalse(tile.isAvailable)
++        XCTAssertFalse(editor.select(tile), "an icon that has not arrived cannot be chosen")
++        fixture.holdDownloads = false
++        await loading.value
++        XCTAssertTrue(try XCTUnwrap(editor.tiles.first).isAvailable)
++        editor.slot = .hero
++        XCTAssertEqual(editor.tiles.map(\.id), ["banner", "screenshot.0", "screenshot.1"], "the hero tab does not list the icon")
++    }
++
++    @MainActor func testAnImportOnTheIconTabUsesTheIconKindAndIsChosenForTheIconOnly() async throws {
++        let editor = try await iconEditor()
++        await editor.importFile(try fixture.chosenImage(width: 800, height: 600, name: "mine.png"))
++        guard case .imported(let name)? = editor.draft.icon?.source else { return XCTFail("the icon takes the file") }
++        XCTAssertTrue(name.hasSuffix(".png"), "an icon is stored as a PNG")
++        XCTAssertNil(editor.draft.hero)
++        XCTAssertNil(editor.draft.thumbnail)
++        XCTAssertEqual(editor.tiles.filter(\.isSelected).map(\.id), ["imported." + name])
++        let stored = try XCTUnwrap(CGImageSourceCreateWithURL(fixture.customDirectory.appendingPathComponent(name) as CFURL, nil).flatMap { CGImageSourceCopyPropertiesAtIndex($0, 0, nil) } as? [CFString: Any])
++        XCTAssertEqual(stored[kCGImagePropertyPixelWidth] as? Int, stored[kCGImagePropertyPixelHeight] as? Int, "cut square")
++    }
++
++    @MainActor func testAnImportedHeroThatIsAPNGStaysOnTheHeroTabAndNotTheIconTab() async throws {
++        fixture = try ArtworkFixture()
++        var env = fixture.environment()
++        env.prepare = { file, _, directory in try ArtworkImport.prepare(file, kind: .icon, into: directory) }   // a hero stored as a PNG
++        let editor = ArtworkEditor(game: fixture.game, slot: .hero, artworkDirectory: fixture.artwork, env: env, labels: { L10n.string($0, .en) })
++        await editor.load()
++        await editor.importFile(try fixture.chosenImage(width: 800, height: 600, name: "mine.png"))
++        guard case .imported(let name)? = editor.draft.hero?.source else { return XCTFail("the hero takes the file") }
++        XCTAssertTrue(name.hasSuffix(".png"))
++        XCTAssertTrue(editor.tiles.contains { $0.id == "imported." + name })
++        editor.slot = .icon
++        XCTAssertFalse(editor.tiles.contains { $0.id == "imported." + name })
++        XCTAssertTrue(editor.save(to: fixture.library))
++        let reopened = fixture.editor(slot: .hero)
++        await reopened.load()
++        XCTAssertTrue(reopened.tiles.contains { $0.id == "imported." + name }, "a saved hero is the hero tab's by what refers to it")
++        reopened.slot = .icon
++        XCTAssertFalse(reopened.tiles.contains { $0.id == "imported." + name })
++    }
++
++    @MainActor func testASmallIconWarnsWithTheWidthOfThePictureNotOfTheStoredCopy() async throws {
++        let editor = try await iconEditor()
++        await editor.importFile(try fixture.chosenImage(width: 200, height: 200, name: "tiny.png"))
++        XCTAssertEqual(editor.notice, .warning("This image is 200 px wide. It may look soft."))
++        XCTAssertTrue(try XCTUnwrap(editor.tiles.last).isLowResolution)
++    }
++
++    @MainActor func testChoosingTheGameIconIsTheDefaultAndResetGoesBackToIt() async throws {
++        let editor = try await iconEditor()
++        XCTAssertFalse(editor.canReset(.icon))
++        editor.select(editor.tiles[1])
++        XCTAssertEqual(editor.draft.icon?.source, .eshopIcon)
++        XCTAssertTrue(editor.isDirty)
++        XCTAssertTrue(editor.canReset(.icon))
++        XCTAssertEqual(editor.selectedFile?.lastPathComponent, "icon.jpg")
++        editor.select(editor.tiles[0])
++        XCTAssertNil(editor.draft.icon, "the game's icon is no choice")
++        XCTAssertFalse(editor.isDirty)
++        editor.select(editor.tiles[1])
++        editor.reset(.icon)
++        XCTAssertNil(editor.draft.icon)
++        XCTAssertEqual(editor.tiles.filter(\.isSelected).map(\.id), ["gameIcon"])
++        XCTAssertNil(editor.draft.hero)
++    }
++
++    @MainActor func testSaveAndCancelForTheIcon() async throws {
++        let editor = try await iconEditor()
++        await editor.importFile(try fixture.chosenImage(width: 600, height: 600, name: "mine.png"))
++        guard case .imported(let name)? = editor.draft.icon?.source else { return XCTFail("chosen") }
++        let copy = fixture.customDirectory.appendingPathComponent(name)
++        editor.cancel()
++        XCTAssertNil(fixture.library.games[0].artwork.icon)
++        XCTAssertFalse(FileManager.default.fileExists(atPath: copy.path), "an import that was not saved is removed")
++
++        let second = fixture.editor(slot: .icon)
++        await second.load()
++        second.select(second.tiles[1])
++        XCTAssertTrue(second.save(to: fixture.library))
++        XCTAssertEqual(fixture.library.games[0].artwork.icon, ArtworkChoice(source: .eshopIcon))
++        XCTAssertTrue(second.savedIconChange)
++        let reloaded = GameLibrary(file: fixture.temporary.appendingPathComponent("library.json"), artwork: fixture.artwork)
++        XCTAssertEqual(reloaded.games[0].artwork.icon?.source, .eshopIcon)
++    }
++
++    @MainActor func testASavedImportedIconIsListedAgainAndKeptByCancel() async throws {
++        let editor = try await iconEditor()
++        await editor.importFile(try fixture.chosenImage(width: 600, height: 600, name: "mine.png"))
++        XCTAssertTrue(editor.save(to: fixture.library))
++        guard case .imported(let name)? = fixture.library.games[0].artwork.icon?.source else { return XCTFail("saved") }
++        let again = fixture.editor(slot: .icon)
++        XCTAssertEqual(again.tiles.map(\.id), ["gameIcon", "imported." + name], "before the list arrives")
++        XCTAssertEqual(again.tiles.filter(\.isSelected).map(\.id), ["imported." + name])
++        again.cancel()
++        XCTAssertTrue(FileManager.default.fileExists(atPath: fixture.customDirectory.appendingPathComponent(name).path))
++    }
++
++    @MainActor func testSavingAnotherSlotIsNotAnIconChange() async throws {
++        let editor = try await loaded()
++        editor.select(editor.tiles[3])
++        XCTAssertTrue(editor.save(to: fixture.library))
++        XCTAssertFalse(editor.savedIconChange)
++    }
++
++    // MARK: The build and the note
++
++    @MainActor func testTheBuildGetsDMIconForAnEshopOrImportedIconOnly() async throws {
++        let editor = try await iconEditor()
++        let none = GameLibrary.buildEnvironment(for: fixture.game, banners: fixture.artwork)
++        XCTAssertEqual(none, [:], "no choice is the game's icon")
++        editor.select(editor.tiles[1])
++        XCTAssertTrue(editor.save(to: fixture.library))
++        let eshop = GameLibrary.buildEnvironment(for: fixture.game, banners: fixture.artwork)
++        XCTAssertEqual(eshop["DM_ICON"], fixture.artwork.appendingPathComponent(fixture.titleID + "/icon.jpg").path)
++
++        let second = fixture.editor(slot: .icon)
++        await second.load()
++        await second.importFile(try fixture.chosenImage(width: 600, height: 600, name: "mine.png"))
++        XCTAssertTrue(second.save(to: fixture.library))
++        guard case .imported(let name)? = fixture.game.artwork.icon?.source else { return XCTFail("saved") }
++        XCTAssertEqual(GameLibrary.buildEnvironment(for: fixture.game, banners: fixture.artwork)["DM_ICON"], fixture.customDirectory.appendingPathComponent(name).path)
++
++        var own = fixture.game
++        own.artwork.icon = ArtworkChoice(source: .gameIcon)
++        XCTAssertEqual(GameLibrary.buildEnvironment(for: own, banners: fixture.artwork), [:])
++        XCTAssertEqual(GameLibrary.buildEnvironment(for: nil, banners: fixture.artwork), [:])
++        try FileManager.default.removeItem(at: fixture.customDirectory.appendingPathComponent(name))
++        XCTAssertEqual(GameLibrary.buildEnvironment(for: fixture.game, banners: fixture.artwork), [:], "a file that is gone leaves the game's icon")
++    }
++
++    @MainActor func testTheBuildFindsTheGameByItsBasePackageThenByTitleIDPreferringTheSelectedOne() throws {
++        fixture = try ArtworkFixture(others: [("0100535012974000", "Hades again")])
++        let tid = "0100535012974000"
++        XCTAssertEqual(fixture.library.game(forTitleID: tid, basePath: "")?.id, fixture.gameID)
++        fixture.library.selectedID = fixture.library.games[1].id
++        XCTAssertEqual(fixture.library.game(forTitleID: tid, basePath: "/x/unlisted.nsp")?.id, fixture.library.games[1].id)
++        XCTAssertNil(fixture.library.game(forTitleID: "game", basePath: ""))
++        // The build names its package: the entry that has it, even when another entry of the title is selected.
++        let file = fixture.temporary.appendingPathComponent("library.json")
++        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
++        var games = try XCTUnwrap(json["games"] as? [[String: Any]])
++        games[0]["inputs"] = ["base": ["/x/Hades.nsp"]]
++        json["games"] = games
++        try JSONSerialization.data(withJSONObject: json).write(to: file)
++        let library = GameLibrary(file: file, artwork: fixture.artwork)
++        library.selectedID = library.games[1].id
++        XCTAssertEqual(library.game(forTitleID: tid, basePath: "/x/Hades.nsp")?.id, fixture.gameID)
++    }
++
++    @MainActor func testTheGameIconIsFoundInTheExtractionTheLastBuildLeft() throws {
++        fixture = try ArtworkFixture()
++        var game = fixture.game
++        XCTAssertNil(GameLibrary.gameIcon(of: game), "no output folder of its own")
++        game.outputDirectory = fixture.temporary.appendingPathComponent("out").path
++        let extract = fixture.temporary.appendingPathComponent("out/\(game.titleID)_build/extract/v0")
++        try FileManager.default.createDirectory(at: extract.appendingPathComponent("RomFS"), withIntermediateDirectories: true)
++        XCTAssertNil(GameLibrary.gameIcon(of: game), "no icon saved")
++        try ArtworkFixture.picture(extract.appendingPathComponent("icon.jpg"), width: 256, height: 256, hue: 0.2, label: "Game")
++        XCTAssertEqual(GameLibrary.gameIcon(of: game)?.path, extract.appendingPathComponent("icon.jpg").path)
++    }
++
++    @MainActor func testTheNoteIsForABuiltGameWhoseIconChangedUntilItIsRebuiltOrAnotherIsSelected() async throws {
++        let editor = try await iconEditor()
++        editor.select(editor.tiles[1])
++        XCTAssertTrue(editor.save(to: fixture.library))
++        var built = fixture.game
++        built.appPath = fixture.temporary.appendingPathComponent("Hades.app").path
++        built.iosAppPath = fixture.temporary.appendingPathComponent("Hades-ios.app").path
++        try FileManager.default.createDirectory(atPath: built.iosAppPath, withIntermediateDirectories: true)
++        FileManager.default.createFile(atPath: built.iosAppPath + "/Info.plist", contents: Data())
++        XCTAssertTrue(built.hasBuild)
++        XCTAssertFalse(fixture.game.hasBuild)
++
++        var unbuilt = IconNote()
++        unbuilt.saved(iconChanged: editor.savedIconChange, game: fixture.game)
++        XCTAssertFalse(unbuilt.shows(for: fixture.gameID), "nothing is built yet: the first build has the icon")
++
++        var note = IconNote()
++        note.saved(iconChanged: editor.savedIconChange, game: built)
++        XCTAssertTrue(note.shows(for: fixture.gameID))
++        note.selected(fixture.gameID)
++        XCTAssertTrue(note.shows(for: fixture.gameID), "the same game stays selected")
++        note.selected(UUID())
++        XCTAssertFalse(note.shows(for: fixture.gameID), "another game is selected")
++
++        note.saved(iconChanged: editor.savedIconChange, game: built)
++        note.rebuilt(UUID())
++        XCTAssertTrue(note.shows(for: fixture.gameID), "another game's build changes nothing")
++        note.rebuilt(fixture.gameID)
++        XCTAssertFalse(note.shows(for: fixture.gameID))
++
++        let other = fixture.editor()
++        await other.load()
++        other.select(other.tiles[2])
++        XCTAssertTrue(other.save(to: fixture.library))
++        var unchanged = IconNote()
++        unchanged.saved(iconChanged: other.savedIconChange, game: built)
++        XCTAssertFalse(unchanged.shows(for: fixture.gameID), "a hero change is no icon change")
++    }
++
+     func testTheCopyIsInEveryLanguageAndFollowsTheRules() {
+         let keys = ["title", "tab.hero", "tab.thumbnail", "banner", "screenshot", "yours", "heroBadge", "lowResBadge", "chooseFile", "dropHint.hero", "dropHint.thumbnail",
+-                    "loading", "offline", "retry", "reset.hero", "reset.thumbnail", "cancel", "save", "lowResWarning", "grid.hero", "grid.thumbnail", "framing", "framing.center", "framing.point", "framing.hint"].map { "artwork." + $0 }
++                    "loading", "offline", "retry", "reset.hero", "reset.thumbnail", "cancel", "save", "lowResWarning", "grid.hero", "grid.thumbnail", "framing", "framing.center", "framing.point", "framing.hint",
++                    "tab.icon", "gameIcon", "eshopIcon", "preview.dock", "preview.iphone", "reset.icon", "grid.icon", "dropHint.icon"].map { "artwork." + $0 } + ["library.iconNextBuild"]
+         for key in keys {
+             let en = L10n.string(key, .en)
+             for lang in Lang.allCases {
+diff --git a/frontend/Tests/NSPortBuilderTests/ArtworkPanelTests.swift b/frontend/Tests/NSPortBuilderTests/ArtworkPanelTests.swift
+index 14d840bc..34965eaa 100644
+--- a/frontend/Tests/NSPortBuilderTests/ArtworkPanelTests.swift
++++ b/frontend/Tests/NSPortBuilderTests/ArtworkPanelTests.swift
+@@ -105,6 +105,35 @@ final class ArtworkPanelTests: XCTestCase {
+             await editor.importFile(try fixture.chosenImage(width: 2400))
+         }
+ 
++        let iconFixture = fixture!
++        try iconFixture.makeGameIcon()
++        iconFixture.offerEshopIcon()
++        try await capture("artwork-icon", slot: .icon) { editor in
++            await editor.load()
++            await editor.importFile(try iconFixture.chosenImage(width: 900, height: 900, name: "mine.png", hue: 0.75))
++            editor.select(editor.tiles[1])
++        }
++        try await capture("artwork-icon-default", slot: .icon) { await $0.load() }
++
++        // The hero of a built game (an iPhone app is there) after a new icon was saved, the panel closed
++        let app = FileManager.default.temporaryDirectory.appendingPathComponent("nx-icon-note-" + UUID().uuidString + ".app")
++        try FileManager.default.createDirectory(at: app, withIntermediateDirectories: true)
++        FileManager.default.createFile(atPath: app.appendingPathComponent("Info.plist").path, contents: Data())
++        defer { try? FileManager.default.removeItem(at: app) }
++        let builtFixture = try ArtworkFixture(saved: #","iosAppPath":"\#(app.path)","inputs":{"base":["Hades.nsp"]}"#,
++                                              others: [("01007EF00011E000", "The Legend of Zelda: Breath of the Wild"), ("0100000000010000", "Super Mario Odyssey")])
++        defer { builtFixture.cleanup() }
++        builtFixture.library.selectedID = builtFixture.gameID
++        builtFixture.offerEshopIcon()
++        let noted = builtFixture.editor(slot: .icon, lang: lang)
++        await noted.load()
++        noted.select(noted.tiles[0])
++        noted.save(to: builtFixture.library)
++        var note = IconNote()
++        note.saved(iconChanged: noted.savedIconChange, game: builtFixture.game)
++        try render("artwork-icon-note", in: output,
++                   ContentView(model: model, library: builtFixture.library, performStartupChecks: false, artworkStore: store, iconNote: note))
++
+         // A narrow window, as small as the launcher goes
+         let small = fixture.editor(lang: lang)
+         await small.load()
+diff --git a/frontend/Tests/NSPortBuilderTests/GermanLocalizationTests.swift b/frontend/Tests/NSPortBuilderTests/GermanLocalizationTests.swift
+index 38c4eb67..696d19b3 100644
+--- a/frontend/Tests/NSPortBuilderTests/GermanLocalizationTests.swift
++++ b/frontend/Tests/NSPortBuilderTests/GermanLocalizationTests.swift
+@@ -16,7 +16,7 @@ final class GermanLocalizationTests: XCTestCase {
+         "dep.glslang", "dep.xcode", "dep.metal", "dep.brew", "dep.xcodegen", "dep.zstd", "dep.spirv.win",
+         "dep.zstd.win", "dep.spirv", "dep.dotnet", "dep.phase.download", "dep.python.hint",
+         "controls.fn.A", "controls.fn.B", "controls.fn.X", "controls.fn.Y", "controls.fn.L", "controls.fn.R",
+-        "controls.fn.ZL", "controls.fn.ZR", "controls.fn.Plus", "controls.fn.Minus", "launch.mods", "artwork.screenshot",
++        "controls.fn.ZL", "controls.fn.ZR", "controls.fn.Plus", "controls.fn.Minus", "launch.mods", "artwork.screenshot", "artwork.preview.dock", "artwork.preview.iphone",
+     ]
+ 
+     /// printf-style placeholders in order: %@, %d, %ld, %lld, %.0f and %.1f, positional %1$@, and %%.
+-- 
+2.54.0 (Apple Git-157)
+
