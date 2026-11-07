@@ -520,6 +520,8 @@ final class ArtworkEditorTests: XCTestCase {
     func testTheCopyIsInEveryLanguageAndFollowsTheRules() {
         let keys = ["title", "tab.hero", "tab.thumbnail", "banner", "screenshot", "yours", "heroBadge", "lowResBadge", "chooseFile", "dropHint.hero", "dropHint.thumbnail",
                     "loading", "offline", "retry", "reset.hero", "reset.thumbnail", "cancel", "save", "lowResWarning", "grid.hero", "grid.thumbnail", "framing", "framing.center", "framing.point", "framing.hint", "saveFailed",
+                    "tab.icon", "gameIcon", "eshopIcon", "preview.dock", "preview.iphone", "reset.icon", "grid.icon", "dropHint.icon",
+                    "icon.scope", "icon.default", "icon.rebuild", "icon.later", "icon.rebuildNow", "icon.builderUnsupported", "icon.missing",
                     ].map { "artwork." + $0 }
         for key in keys {
             let en = L10n.string(key, .en)

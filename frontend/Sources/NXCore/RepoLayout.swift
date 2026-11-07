@@ -45,6 +45,12 @@ package enum RepoLayout {
         return text.contains("'--romfs-from'") || text.contains("\"--romfs-from\"")
     }
 
+    /// Whether the build script takes `--icon` (seedds/nxnative#1380, patch 0089); an older engine stops at it.
+    package static func supportsIcon(_ dir: String) -> Bool {
+        guard let text = try? String(contentsOfFile: EngineLayout.root(dir) + "/" + buildScript, encoding: .utf8) else { return false }
+        return text.contains("'--icon'") || text.contains("\"--icon\"")
+    }
+
     /// The checkout of this repository the app drives. A released .app ships on its own,
     /// so the path is not known at build time: look next to the app bundle, walk up from
     /// it, then fall back to a saved choice. A repository is identified by

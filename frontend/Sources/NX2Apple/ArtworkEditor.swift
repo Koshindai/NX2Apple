@@ -16,6 +16,7 @@ struct ArtworkEditorEnvironment {
     /// The size the image is drawn at (upright, as ArtworkImages decodes it). Called off the main thread.
     var pixelSize: (_ file: URL) -> CGSize?
     var removeFile: (_ file: URL) -> Void
+    var gameIcon: (LibraryGame) -> URL? = { GameLibrary.gameIcon(of: $0) }
 
     static func live(store: ArtworkStore) -> ArtworkEditorEnvironment {
         ArtworkEditorEnvironment(
@@ -66,6 +67,8 @@ struct ArtworkEditorEnvironment {
 
         var id: String {
             switch source {
+            case .gameIcon: return "gameIcon"
+            case .eshopIcon: return "eshopIcon"
             case .banner: return "banner"
             case .screenshot(let n): return "screenshot.\(n)"
             case .imported(let name): return "imported." + name
@@ -75,6 +78,7 @@ struct ArtworkEditorEnvironment {
 
     let gameID: UUID
     let gameName: String
+    private let gameIconFile: URL?
     private let titleID: String
     private let importDirectory: URL
     private let env: ArtworkEditorEnvironment
@@ -105,11 +109,13 @@ struct ArtworkEditorEnvironment {
     @Published private var importURLs: [String: URL] = [:]
     @Published private var pixelWidths: [String: Int] = [:]
     @Published private var pixelSizes: [URL: CGSize] = [:]   // of the images the framing was asked for
+    private var importSlots: [String: Set<ArtworkSlot>] = [:]
     private var sessionImports: Set<String> = []   // made while the panel was open: Cancel removes those the saved artwork does not use
     private var loadTask: Task<Void, Never>?
     private var closed = false
 
     init(game: LibraryGame, slot: ArtworkSlot = .hero, artworkDirectory: URL, env: ArtworkEditorEnvironment, labels: @escaping (String) -> String) {
+        gameIconFile = env.gameIcon(game)
         gameID = game.id
         gameName = game.name
         titleID = game.titleID
@@ -120,8 +126,9 @@ struct ArtworkEditorEnvironment {
         original = game.artwork
         draft = game.artwork
         bannerFile = env.banner(game.titleID)
-        importedFiles = [game.artwork.hero, game.artwork.thumbnail].compactMap { if case .imported(let name)? = $0?.source { return name } else { return nil } }
+        importedFiles = [game.artwork.hero, game.artwork.thumbnail, game.artwork.icon].compactMap { if case .imported(let name)? = $0?.source { return name } else { return nil } }
             .reduce(into: []) { names, name in if !names.contains(name) { names.append(name) } }   // one tile when both slots use the file
+        if let icon = env.cachedCandidate(.eshopIcon, game.titleID) { downloaded[.eshopIcon] = icon }
         for name in importedFiles {   // a name in the game's folder, never a path
             let url = importDirectory.appendingPathComponent(name)
             if name == url.lastPathComponent, FileManager.default.fileExists(atPath: url.path) { importURLs[name] = url }
@@ -132,10 +139,17 @@ struct ArtworkEditorEnvironment {
     deinit { loadTask?.cancel() }
 
 
-    var isDirty: Bool { draft != original }
+    var isDirty: Bool { draft.hero != original.hero || draft.thumbnail != original.thumbnail || draft.icon != original.icon || iconNeedsRendering }
+
+    private var iconNeedsRendering: Bool {
+        guard draft.icon != nil else { return false }
+        guard let name = draft.iconFile, name == URL(fileURLWithPath: name).lastPathComponent, name != ".." else { return true }
+        return !FileManager.default.fileExists(atPath: importDirectory.appendingPathComponent(name).path)
+    }
 
     func canReset(_ slot: ArtworkSlot) -> Bool {
         switch slot {
+        case .icon: return draft.icon != nil
         case .hero: return draft.hero != nil
         case .thumbnail: return draft.thumbnail != nil
         }
@@ -151,20 +165,25 @@ struct ArtworkEditorEnvironment {
 
     private var selectedSource: ArtworkChoice.Source? {
         switch slot {
+        case .icon: return draft.icon?.source ?? .gameIcon
         case .hero: return heroSource
         case .thumbnail: return draft.thumbnail?.source ?? heroSource
         }
     }
 
-    /// The banner, the screenshots, then the game's own images. The "Choose file…" tile is the view's. Both tabs offer the same images.
+    /// Hero and Thumbnail offer banners and screenshots. App icon offers the original and eShop icons. Imports can be used independently.
     var tiles: [Tile] {
         var sources: [(ArtworkChoice.Source, URL?)] = []
-        if let bannerFile { sources.append((.banner, bannerFile)) }
-        for n in (media?.screenshots.indices).map({ Array($0) }) ?? [] {
+        if slot == .icon {
+            if let gameIconFile { sources.append((.gameIcon, gameIconFile)) }
+            if media?.icon != nil || downloaded[.eshopIcon] != nil { sources.append((.eshopIcon, downloaded[.eshopIcon])) }
+        }
+        if slot != .icon, let bannerFile { sources.append((.banner, bannerFile)) }
+        for n in (slot == .icon ? [] : (media?.screenshots.indices).map({ Array($0) }) ?? []) {
             let source = ArtworkChoice.Source.screenshot(n)
             sources.append((source, downloaded[source]))
         }
-        for name in importedFiles { sources.append((.imported(name), importURLs[name])) }
+        for name in importedFiles where isOnCurrentTab(name) { sources.append((.imported(name), importURLs[name])) }
         let selected = selectedSource, hero = heroSource, kind = importKind
         return sources.map { source, file in
             var low = false
@@ -174,12 +193,26 @@ struct ArtworkEditorEnvironment {
         }
     }
 
+    /// Hero and Thumbnail share their imported images. An icon import appears only on the icon tab,
+    /// unless the same source was explicitly imported for the other artwork too.
+    private func isOnCurrentTab(_ name: String) -> Bool {
+        let source = ArtworkChoice.Source.imported(name)
+        let iconTab = slot == .icon
+        let referenced = [original, draft].contains {
+            iconTab ? $0.icon?.source == source : ($0.hero?.source == source || $0.thumbnail?.source == source)
+        }
+        let importedOn = importSlots[name] ?? []
+        return referenced || (iconTab ? importedOn.contains(.icon) : !importedOn.isDisjoint(with: [.hero, .thumbnail]))
+    }
+
     /// The list of screenshots is being read: the view shows skeleton tiles after the ones it knows.
     var isLoading: Bool { loadState == .loading }
 
     func label(for tile: Tile) -> String {
         var parts: [String]
         switch tile.source {
+        case .gameIcon: parts = [labels("artwork.gameIcon")]
+        case .eshopIcon: parts = [labels("artwork.eshopIcon")]
         case .banner: parts = [labels("artwork.banner")]
         case .screenshot(let n): parts = [String(format: labels("artwork.screenshot"), n + 1)]
         case .imported: parts = [labels("artwork.yours")]
@@ -191,9 +224,11 @@ struct ArtworkEditorEnvironment {
 
     var gridLabel: String { labels("artwork.grid." + slot.rawValue) }
 
-    var tileAspect: CGFloat { 16 / 9 }
+    var gridColumns: Int { slot == .icon ? 4 : Self.columns }
 
-    private var importKind: ArtworkImport.Kind { slot == .hero ? .hero : .thumbnail }
+    var tileAspect: CGFloat { slot == .icon ? 1 : 16 / 9 }
+
+    private var importKind: ArtworkImport.Kind { slot == .icon ? .icon : (slot == .hero ? .hero : .thumbnail) }
 
 
     /// Makes the tile the slot's choice. A tile whose image has not arrived cannot be chosen.
@@ -201,6 +236,7 @@ struct ArtworkEditorEnvironment {
         guard tile.isAvailable else { return false }
         notice = nil
         switch slot {
+        case .icon: draft.icon = tile.source == .gameIcon ? nil : (draft.icon?.source == tile.source ? draft.icon : ArtworkChoice(source: tile.source))
         case .hero: draft.hero = draft.hero?.source == tile.source ? draft.hero : ArtworkChoice(source: tile.source)
         case .thumbnail: draft.thumbnail = tile.isHero ? nil : (draft.thumbnail?.source == tile.source ? draft.thumbnail : ArtworkChoice(source: tile.source))
         }
@@ -212,6 +248,7 @@ struct ArtworkEditorEnvironment {
     private func choose(_ source: ArtworkChoice.Source, for slot: ArtworkSlot) {
         notice = nil
         switch slot {
+        case .icon: if draft.icon?.source != source { draft.icon = source == .gameIcon ? nil : ArtworkChoice(source: source) }
         case .hero: if draft.hero?.source != source { draft.hero = ArtworkChoice(source: source) }
         case .thumbnail: draft.thumbnail = source == heroSource ? nil : (draft.thumbnail?.source == source ? draft.thumbnail : ArtworkChoice(source: source))
         }
@@ -223,17 +260,17 @@ struct ArtworkEditorEnvironment {
         if let cursor, all.indices.contains(cursor) { select(all[cursor]) }
     }
 
-    /// An arrow key: moves over the grid by rows of three and chooses what it lands on, as the cards of the library do.
+    /// An arrow key moves over rows of the displayed grid and chooses what it lands on.
     func move(_ direction: Direction) {
         let all = tiles
         guard !all.isEmpty else { return }
         guard let from = cursor ?? all.firstIndex(where: \.isSelected) else { cursor = 0; selectCursor(); return }
         var to = from
         switch direction {
-        case .left: if from % Self.columns > 0 { to = from - 1 }
-        case .right: if from % Self.columns < Self.columns - 1, from + 1 < all.count { to = from + 1 }
-        case .up: if from >= Self.columns { to = from - Self.columns }
-        case .down: if from + Self.columns < all.count { to = from + Self.columns }
+        case .left: if from % gridColumns > 0 { to = from - 1 }
+        case .right: if from % gridColumns < gridColumns - 1, from + 1 < all.count { to = from + 1 }
+        case .up: if from >= gridColumns { to = from - gridColumns }
+        case .down: if from + gridColumns < all.count { to = from + gridColumns }
         }
         cursor = to
         selectCursor()
@@ -246,7 +283,7 @@ struct ArtworkEditorEnvironment {
     var framingImageSize: CGSize? { selectedFile.flatMap { pixelSizes[$0] } }
 
     /// The band the slot's image is cropped to, as a size of the right proportions.
-    var framingBand: CGSize { CGSize(width: slot == .hero ? heroAspect : Self.thumbnailBandAspect, height: 1) }
+    var framingBand: CGSize { CGSize(width: slot == .icon ? 1 : (slot == .hero ? heroAspect : Self.thumbnailBandAspect), height: 1) }
 
     /// The chosen image is cut by 5 % or more in the slot's band: only then is a point worth choosing.
     var needsFraming: Bool { framingImageSize.map { ArtworkFraming.needsFraming(image: $0, band: framingBand) } ?? false }
@@ -270,6 +307,9 @@ struct ArtworkEditorEnvironment {
         guard focus != self.focus else { return }
         // A point moved back to where it was before the panel opened leaves no choice behind: no Reset, nothing to save
         switch slot {
+        case .icon:
+            guard let source = draft.icon?.source else { return }
+            draft.icon = ArtworkChoice(source: source, focus: focus)
         case .hero:
             guard let source = heroSource else { return }
             let choice = ArtworkChoice(source: source, focus: focus)
@@ -308,6 +348,7 @@ struct ArtworkEditorEnvironment {
     func reset(_ slot: ArtworkSlot) {
         notice = nil
         switch slot {
+        case .icon: draft.icon = nil
         case .hero: draft.hero = nil
         case .thumbnail: draft.thumbnail = nil
         }
@@ -341,7 +382,7 @@ struct ArtworkEditorEnvironment {
         case .loaded(let found):
             media = found
             loadState = .loaded
-            for source in found.screenshots.indices.map({ ArtworkChoice.Source.screenshot($0) }) {
+            for source in found.screenshots.indices.map({ ArtworkChoice.Source.screenshot($0) }) + (found.icon == nil ? [] : [.eshopIcon]) {
                 if let file = env.cachedCandidate(source, titleID) { downloaded[source] = file; continue }
                 do {
                     let file = try await env.candidate(source, titleID)
@@ -373,6 +414,7 @@ struct ArtworkEditorEnvironment {
             importURLs[name] = prepared.url
             let width = Int(prepared.pixelSize.width)
             pixelWidths[name] = width
+            importSlots[name, default: []].insert(target)
             sessionImports.insert(name)
             choose(.imported(name), for: target)
             if prepared.lowResolution { notice = .warning(String(format: labels("artwork.lowResWarning"), width)) }
@@ -387,11 +429,33 @@ struct ArtworkEditorEnvironment {
     /// nothing is removed and the panel stays as it was, with an error, so Save can be pressed again.
     @discardableResult func save(to library: GameLibrary) -> Bool {
         guard isDirty else { return false }
+        if draft.icon == original.icon { draft.iconFile = original.iconFile }
+        if draft.icon != original.icon || iconNeedsRendering {
+            if let choice = draft.icon {
+                guard let file = tilesForIconFile(choice.source) else { notice = .error(labels("artwork.error.unreadable")); return false }
+                do {
+                    let rendered = try AppIconImage.render(file, focus: choice.focus, into: importDirectory)
+                    draft.iconFile = rendered.lastPathComponent
+                    sessionImports.insert(rendered.lastPathComponent)
+                    importURLs[rendered.lastPathComponent] = rendered
+                } catch { notice = .error(labels("artwork.error.unreadable")); return false }
+            } else { draft.iconFile = nil }
+        }
         guard library.setArtwork(draft, for: gameID) else { notice = .error(labels("artwork.saveFailed")); return false }
         closed = true
         loadTask?.cancel()
         original = draft
         return true
+    }
+
+    private func tilesForIconFile(_ source: ArtworkChoice.Source) -> URL? {
+        switch source {
+        case .imported(let name): return importURLs[name]
+        case .eshopIcon: return downloaded[source] ?? env.cachedCandidate(source, titleID)
+        case .banner: return bannerFile
+        case .screenshot: return downloaded[source] ?? env.cachedCandidate(source, titleID)
+        case .gameIcon: return gameIconFile
+        }
     }
 
     /// Leaves the library as it was. A copy made while the panel was open that the saved artwork does not use is removed.

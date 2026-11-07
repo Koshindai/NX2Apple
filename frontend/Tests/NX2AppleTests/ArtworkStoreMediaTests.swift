@@ -41,6 +41,34 @@ final class ArtworkStoreMediaTests: XCTestCase {
         ArtworkStore(directory: temporary.appendingPathComponent("artwork"), titleList: list, allowsFileURLs: true)
     }
 
+    func testIconOnlyTitleLoadsDownloadsAndSurvivesOffline() async throws {
+        let icon = try jpeg("icon.jpg", width: 1024, height: 1024)
+        let list = temporary.appendingPathComponent("icons.json")
+        try Data("{\"one\": {\"id\": \"\(titleID)\", \"iconUrl\": \"\(icon.absoluteString)\"}}".utf8).write(to: list)
+        let first = store(list)
+        guard case .loaded(let media) = await first.media(for: titleID) else { return XCTFail("icon without screenshots must load") }
+        XCTAssertEqual(media.icon, icon.absoluteString)
+        let downloaded = try await first.candidate(.eshopIcon, titleID: titleID)
+        XCTAssertEqual(downloaded.lastPathComponent, "icon.jpg")
+        XCTAssertEqual(try Data(contentsOf: downloaded), try Data(contentsOf: icon))
+        try FileManager.default.removeItem(at: list)
+        let offline = store(list)
+        let again = try await offline.candidate(.eshopIcon, titleID: titleID)
+        XCTAssertEqual(again, downloaded)
+        let loaded = await offline.media(for: titleID)
+        XCTAssertEqual(loaded, .loaded(media))
+    }
+
+    func testOldScreenshotIndexRefreshesForIconsAndStillWorksOffline() async throws {
+        let list = temporary.appendingPathComponent("icons.json")
+        try Data("{\"one\": {\"id\": \"\(titleID)\", \"iconUrl\": \"\(try jpeg("icon.jpg").absoluteString)\"}}".utf8).write(to: list)
+        let cache = temporary.appendingPathComponent("artwork")
+        try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
+        try Data("{\"fetched\": \"2026-01-01T00:00:00Z\", \"banners\": {}, \"media\": {\"\(titleID)\": {\"screenshots\": []}}}".utf8).write(to: cache.appendingPathComponent("index.json"))
+        guard case .loaded(let media) = await store(list).media(for: titleID) else { return XCTFail("old index was not refreshed") }
+        XCTAssertNotNil(media.icon)
+    }
+
     func testScreenshotsAreIndexedUpToSix() async throws {
         let store = store(try writeList())
         guard case .loaded(let media) = await store.media(for: titleID) else { return XCTFail("no media") }

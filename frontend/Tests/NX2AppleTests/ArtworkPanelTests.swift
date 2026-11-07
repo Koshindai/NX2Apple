@@ -48,6 +48,32 @@ final class ArtworkPanelTests: XCTestCase {
             editor.cancel()   // a copy made for the capture is removed
         }
 
+        let originalIcon = fixture.temporary.appendingPathComponent("game-icon.jpg")
+        let shopIcon = fixture.temporary.appendingPathComponent("shop-icon.jpg")
+        try ArtworkFixture.picture(originalIcon, width: 1024, height: 1024, hue: 0.2, label: "Game icon")
+        try ArtworkFixture.picture(shopIcon, width: 1024, height: 1024, hue: 0.4, label: "eShop icon")
+        var iconEnvironment = fixture.environment()
+        iconEnvironment.gameIcon = { _ in originalIcon }
+        iconEnvironment.media = { _, _ in .loaded(ArtworkStore.Media(screenshots: [], icon: "shop")) }
+        iconEnvironment.candidate = { _, _ in shopIcon }
+        let iconEditor = ArtworkEditor(game: fixture.game, slot: .icon, artworkDirectory: fixture.artwork, env: iconEnvironment, labels: { L10n.string($0, lang) })
+        await iconEditor.load()
+        iconEditor.select(try XCTUnwrap(iconEditor.tiles.first { $0.source == .eshopIcon }))
+        try render("artwork-icon-eshop", in: output,
+                   LauncherView(stores: stores, library: fixture.library, performStartupChecks: false, artworkEditor: iconEditor, artworkStore: store))
+        iconEditor.cancel()
+
+        try await capture("artwork-icon", slot: .icon) { editor in
+            await editor.load()
+            await editor.importFile(try fixture.chosenImage(width: 1600, height: 900, name: "icon.png"))
+            await editor.measureSelected()
+            editor.setFocus(ArtworkFocus(x: 0.8, y: 0.5))
+        }
+        try await capture("artwork-icon-default", slot: .icon) { await $0.load() }
+
+        try render("artwork-icon-saved", in: output,
+                   LauncherView(stores: stores, library: fixture.library, performStartupChecks: false, artworkStore: store, iconRebuildGame: fixture.gameID))
+
         try await capture("artwork-hero") { editor in
             await editor.load()
             editor.select(editor.tiles[3])

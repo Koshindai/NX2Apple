@@ -36,6 +36,7 @@ struct LauncherView: View {
     @State private var savesFor: UUID?   // the game whose Saves sheet is open (SaveTransfer.swift)
     @State private var cheatsFor: UUID?  // the game whose Cheats sheet is open (CheatsView.swift)
     @State var manageOpenFor: UUID?   // the game whose Manage menu is open (ManageMenu.swift)
+    @State var iconRebuildGame: UUID?
     @State var artworkEditor: ArtworkEditor?   // the game whose artwork panel is open (ArtworkPanel.swift, LauncherView+Artwork.swift)
     @State var artworkSlot: ArtworkSlot?   // its tab: the part of the library not being edited dims
     @State var artworkPreview: GameArtwork?   // its draft, which the hero and the selected card draw instead of the saved artwork
@@ -61,7 +62,7 @@ struct LauncherView: View {
          activeBuildID: UUID? = nil, performStartupChecks: Bool = true, search: String? = nil, olderTools: Set<UUID> = [],
          manageOpen: Bool = false, padRing: Bool = false, onRunSetup: (() -> Void)? = nil,
          enterConsole: (() -> Void)? = nil, controllerDriver: AnyConsoleDriver? = nil, controls sharedControls: ControlLayout? = nil, qaPrompt: Bool = false,
-         gamepad: LauncherGamepad? = nil, padFocus: PadFocus? = nil, artworkOpen: ArtworkSlot? = nil, artworkEditor: ArtworkEditor? = nil, artworkStore: ArtworkStore = .shared) {
+         gamepad: LauncherGamepad? = nil, padFocus: PadFocus? = nil, artworkOpen: ArtworkSlot? = nil, artworkEditor: ArtworkEditor? = nil, artworkStore: ArtworkStore = .shared, iconRebuildGame: UUID? = nil) {
         _padFocus = StateObject(wrappedValue: padFocus ?? PadFocus())
         _consolePrompt = State(initialValue: qaPrompt)   // visual QA: the connect prompt open at launch
         self.onRunSetup = onRunSetup
@@ -73,6 +74,7 @@ struct LauncherView: View {
         qaManage = (manageOpen, padRing)
         qaArtwork = artworkOpen
         self.artworkStore = artworkStore
+        _iconRebuildGame = State(initialValue: iconRebuildGame)
         _artworkEditor = State(initialValue: artworkEditor)   // tests hand in one with its own environment
         _artworkPreview = State(initialValue: artworkEditor?.draft)   // and the library draws its draft from the first frame
         _artworkSlot = State(initialValue: artworkEditor?.slot)
@@ -163,6 +165,12 @@ struct LauncherView: View {
                         libraryPage
                             .allowsHitTesting(artworkEditor == nil)   // the library stays visible as the live preview, and takes no click or Return
                             .transaction { if reduceMotion { $0.animation = nil } }   // under Reduce Motion the panel fades in, nothing moves
+                            .overlay(alignment: .bottom) {
+                                if let id = iconRebuildGame, let game = library.games.first(where: { $0.id == id }) {
+                                    iconRebuildNotice(game).padding(.bottom, 24)
+                                        .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+                                }
+                            }
                         activityBar
                     }
                     if let editor = artworkEditor {

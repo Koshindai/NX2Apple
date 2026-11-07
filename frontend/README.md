@@ -252,6 +252,14 @@ screenshots (6 at most): they are indexed for the games asked about and
 downloaded one by one into `artwork/<title ID>/`, only when asked for. Images chosen with an earlier version are
 copied the same way at the next launch.
 
+The **App icon** tab chooses the game's original icon, the eShop icon, or a file.
+Its square framing is saved as a 1024×1024 PNG alongside the source image. Mac app
+and one-game IPA builds pass it to the engine with `--icon`. Reset uses the game's
+original icon at the next build, even when the extraction is no longer on disk.
+Saving an icon change for an existing standalone app offers **Later** and **Rebuild now**.
+A rebuild reuses the game's build folder. The shared NX2Apple app keeps its own icon.
+Custom app icons currently require the standard builder rather than the experimental one.
+
 The list can hold several shop products under one title ID: the game, its Nintendo
 Switch 2 Edition, or a bundle with a membership or an expansion pass. The launcher
 takes the game's own product. A product whose name marks an edition, a bundle, a pass

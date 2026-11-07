@@ -30,6 +30,9 @@ actor ArtworkStore {
     /// What the list knows of a title besides its banner: up to `maxScreenshots` gameplay screenshots (1920×1080).
     struct Media: Codable, Equatable {
         var screenshots: [String]
+        var icon: String? = nil
+        /// nil in an older screenshot-only index, true after the list was read for icons, even when none exists.
+        var includesIcon: Bool? = true
     }
     enum MediaLoad: Equatable {
         case loaded(Media)
@@ -75,6 +78,7 @@ actor ArtworkStore {
         guard isTitleID(titleID.uppercased()) else { return nil }
         let name: String
         switch source {
+        case .eshopIcon: name = "icon.jpg"
         case .screenshot(let n) where (0..<maxScreenshots).contains(n): name = "screenshot-\(n).jpg"
         default: return nil
         }
@@ -106,7 +110,7 @@ actor ArtworkStore {
         // A title added since the list was last read has its banner and no media: read the list now, in the background, rather than
         // when the panel opens. An index without media is left for `media(for:)`, as it is not rewritten at launch.
         loadIndex()
-        let lacksMedia = index?.media.map { media in asked.contains { media[$0] == nil } } ?? false
+        let lacksMedia = index?.media.map { media in asked.contains { media[$0] == nil || media[$0]?.includesIcon != true } } ?? false
         guard !wanted.isEmpty || (lacksMedia && !listFailed), !running else { return [] }
         running = true
         defer { running = false }
@@ -142,9 +146,9 @@ actor ArtworkStore {
         seen.insert(id)
         if retrying { listFailed = false }
         loadIndex()
-        if index?.media?[id] == nil, !listFailed { await refresh() }
+        if (index?.media?[id] == nil || index?.media?[id]?.includesIcon != true), !listFailed { await refresh() }
         guard let media = index?.media?[id] else { return .offline }
-        return media.screenshots.isEmpty ? .none : .loaded(media)
+        return media.screenshots.isEmpty && media.icon == nil ? .none : .loaded(media)
     }
 
     func candidate(_ source: ArtworkChoice.Source, titleID: String) async throws -> URL {
@@ -152,6 +156,7 @@ actor ArtworkStore {
         if FileManager.default.fileExists(atPath: file.path) { return file }
         switch await media(for: titleID) {
         case .loaded(let media):
+            if source == .eshopIcon { try await download(media.icon, to: file) }
             if case .screenshot(let n) = source { try await download(media.screenshots.indices.contains(n) ? media.screenshots[n] : nil, to: file) }
             return file
         case .offline: throw URLError(.notConnectedToInternet)
@@ -210,7 +215,7 @@ actor ArtworkStore {
             for id in kept {   // a title not in the list gets no screenshots, and no second look
                 let list = byID[id] ?? []
                 let product = BannerPick.pick(list) ?? list.first
-                media[id] = Media(screenshots: Array((product?.screenshots ?? []).prefix(Self.maxScreenshots)))
+                media[id] = Media(screenshots: Array((product?.screenshots ?? []).prefix(Self.maxScreenshots)), icon: product?.iconUrl.flatMap { $0.isEmpty ? nil : $0 })
             }
             let fresh = Index(version: Self.indexVersion, fetched: Date(), banners: picked.banners, several: picked.several, media: media)
             index = fresh
@@ -284,6 +289,7 @@ enum BannerPick {
         var name: String?
         var nsuId: Int64?
         var isDemo: Bool?
+        var iconUrl: String?
         var bannerUrl: String?
         var screenshots: [String]?
 
@@ -291,7 +297,7 @@ enum BannerPick {
             self.id = id; self.name = name; self.nsuId = nsuId; self.isDemo = isDemo; self.bannerUrl = bannerUrl; self.screenshots = screenshots
         }
 
-        private enum CodingKeys: String, CodingKey { case id, name, nsuId, isDemo, bannerUrl, screenshots }
+        private enum CodingKeys: String, CodingKey { case id, name, nsuId, isDemo, bannerUrl, screenshots, iconUrl }
 
         /// Third-party data: a field of an unexpected type is left out instead of failing the whole list.
         init(from decoder: Decoder) throws {
@@ -302,6 +308,7 @@ enum BannerPick {
             else if let text = try? c.decodeIfPresent(String.self, forKey: .nsuId) { nsuId = Int64(text) }
             else { nsuId = nil }
             isDemo = try? c.decodeIfPresent(Bool.self, forKey: .isDemo)
+            iconUrl = try? c.decodeIfPresent(String.self, forKey: .iconUrl)
             bannerUrl = try? c.decodeIfPresent(String.self, forKey: .bannerUrl)
             screenshots = try? c.decodeIfPresent([String].self, forKey: .screenshots)
         }

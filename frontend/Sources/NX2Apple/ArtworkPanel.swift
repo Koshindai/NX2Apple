@@ -4,11 +4,11 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// The artwork editor's panel (design C): a column beside the library, which stays visible behind it as the live preview of the
-/// editor's draft. Hero and Thumbnail tabs, a grid of the images the game has (the eShop banner and screenshots, the player's own
+/// editor's draft. Hero, Thumbnail and App icon tabs, a grid of the images the game has (the eShop banner and screenshots, the player's own
 /// files), Reset, Cancel and Save. The state is `ArtworkEditor`, so this is only the view.
 struct ArtworkPanel: View {
     static let width: CGFloat = 420
-    private static let slots: [ArtworkSlot] = [.hero, .thumbnail]
+    private static let slots: [ArtworkSlot] = ArtworkSlot.allCases
 
     @ObservedObject var editor: ArtworkEditor
     let labels: (String) -> String
@@ -38,6 +38,7 @@ struct ArtworkPanel: View {
                     if editor.loadState == .offline { offline }
                     if let notice = editor.notice { noticeRow(notice) }
                     if editor.needsFraming { framing }
+                    if editor.slot == .icon { iconPreviews }
                 }
                 .padding(.horizontal, 24).padding(.top, 6).padding(.bottom, 16)
                 .task(id: editor.selectedFile) { await editor.measureSelected() }
@@ -81,9 +82,9 @@ struct ArtworkPanel: View {
 
 
     private var grid: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: ArtworkEditor.columns), spacing: 10) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: editor.gridColumns), spacing: 10) {
             ForEach(editor.tiles) { tile in tileButton(tile) }
-            if editor.isLoading { ForEach(0..<ArtworkStore.maxScreenshots, id: \.self) { _ in SkeletonTile(animated: !reduceMotion, aspect: editor.tileAspect) } }
+            if editor.isLoading && editor.slot != .icon { ForEach(0..<ArtworkStore.maxScreenshots, id: \.self) { _ in SkeletonTile(animated: !reduceMotion, aspect: editor.tileAspect) } }
             chooseFile
         }
         .focusable()
@@ -120,7 +121,7 @@ struct ArtworkPanel: View {
                     } else {
                         ZStack {
                             LauncherPalette.surface
-                            Image(systemName: tile.isFailed ? "photo.badge.exclamationmark" : "photo").font(.system(size: 15, weight: .light)).foregroundStyle(.secondary)
+                            Image(systemName: tile.source == .gameIcon ? "app.dashed" : tile.isFailed ? "photo.badge.exclamationmark" : "photo").font(.system(size: 15, weight: .light)).foregroundStyle(.secondary)
                         }
                     }
                 }
@@ -278,6 +279,38 @@ struct ArtworkPanel: View {
     private static func spoken(_ value: Double) -> String { value.formatted(.percent.precision(.fractionLength(0))) }
 
 
+    private var iconPreviews: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if editor.selectedFile != nil {
+                HStack(spacing: 12) {
+                    iconPreview(phone: false)
+                    iconPreview(phone: true)
+                }
+            }
+            Text(t("artwork.icon.scope")).font(.manrope(12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            if editor.draft.icon == nil && editor.selectedFile == nil { Text(t("artwork.icon.default")).font(.manrope(12)).foregroundStyle(.secondary) }
+        }
+    }
+
+    private func iconPreview(phone: Bool) -> some View {
+        VStack(spacing: 8) {
+            VStack(spacing: 5) {
+                Color.clear.frame(width: 64, height: 64).overlay {
+                    if let file = editor.selectedFile, let picture = ArtworkImages.shared.image(at: file, maxPixel: 512) {
+                        ArtworkFill(image: picture, focus: editor.focus.point)
+                    } else { Image(systemName: "app.dashed").font(.system(size: 48)).foregroundStyle(.secondary) }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: phone ? 14 : 12))
+                if phone { Text(editor.gameName).font(.manrope(10)).lineLimit(1).frame(width: 100) }
+                else { Circle().fill(.white.opacity(0.7)).frame(width: 4, height: 4) }
+            }
+            .frame(maxWidth: .infinity).frame(height: 125)
+            .background(LinearGradient(colors: phone ? [Color(red: 0.13, green: 0.19, blue: 0.29), Color(red: 0.22, green: 0.14, blue: 0.25)] : [.white.opacity(0.16), .white.opacity(0.07)], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
+            Text(t(phone ? "artwork.preview.iphone" : "artwork.preview.dock")).font(.manrope(12)).foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
     private var offline: some View {
         HStack(spacing: 12) {
             Label(t("artwork.offline"), systemImage: "wifi.slash").font(.manrope(13)).foregroundStyle(.secondary)
@@ -298,26 +331,35 @@ struct ArtworkPanel: View {
         return Label(text, systemImage: symbol).font(.manrope(13)).foregroundStyle(color).fixedSize(horizontal: false, vertical: true)
     }
 
-    /// Reset, Cancel and Save on one row when the reset text fits (English, Chinese, Swedish), else Reset on a row of its own above
-    /// (German, French, Italian), never cut short.
+    /// Reset, Cancel and Save on one row: with the full reset text when it fits (English, Chinese), else with the short one
+    /// (French, German), and only when even that does not fit, Reset on a row of its own above.
     private var footer: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 10) {
-                if editor.canReset(editor.slot) { resetButton }
-                Spacer(minLength: 8)
-                cancelAndSave
-            }
+            footerRow(short: false)
+            footerRow(short: true)
             VStack(alignment: .leading, spacing: 10) {
-                if editor.canReset(editor.slot) { resetButton }
+                if editor.canReset(editor.slot) { resetButton(short: false) }
                 HStack(spacing: 10) { Spacer(minLength: 0); cancelAndSave }
             }
         }
         .padding(.horizontal, 24).padding(.vertical, 16)
     }
 
-    private var resetButton: some View {
-        Button { editor.reset(editor.slot) } label: { Label(t("artwork.reset." + slotName), systemImage: "arrow.uturn.backward").lineLimit(1).fixedSize() }
+    private func footerRow(short: Bool) -> some View {
+        HStack(spacing: 10) {
+            if editor.canReset(editor.slot) { resetButton(short: short) }
+            Spacer(minLength: 8)
+            cancelAndSave
+        }
+    }
+
+    private func resetButton(short: Bool) -> some View {
+        let full = t("artwork.reset." + slotName)
+        return Button { editor.reset(editor.slot) } label: {
+            Label(short ? t("artwork.reset") : full, systemImage: "arrow.uturn.backward").lineLimit(1).fixedSize()
+        }
             .buttonStyle(LauncherSecondaryButtonStyle())
+            .accessibilityLabel(full)
             .padTarget("artwork.reset", scope: "artwork", radius: 9) { editor.reset(editor.slot) }
     }
 

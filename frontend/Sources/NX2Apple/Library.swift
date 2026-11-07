@@ -723,7 +723,7 @@ final class GameLibrary: ObservableObject {
         let directory = ArtworkStore.customDirectory(for: id, in: artworkDirectory)
         let kept = artwork.importedFiles
         let copies = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
-        for file in copies where !kept.contains(file) && file.range(of: "^[0-9a-f]{64}\\.jpg$", options: .regularExpression) != nil {   // not a copy still being written
+        for file in copies where !kept.contains(file) && file.range(of: "^[0-9a-f]{64}\\.(jpg|png)$", options: .regularExpression) != nil {   // not a copy still being written
             try? FileManager.default.removeItem(at: directory.appendingPathComponent(file))
         }
         return true

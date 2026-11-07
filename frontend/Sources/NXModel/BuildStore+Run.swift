@@ -162,6 +162,14 @@ extension BuildStore {
             for image in RomFSArchive.reusableImages(root: outDir.isEmpty ? baseDir : outDir, key: tidHex) { args += ["--romfs-from", image] }
         }
         let macApp = target == BuildTarget.mac
+        if macApp || exportsOneGame {
+            do {
+                if let icon = try appIcon(tidHex, basePath) {
+                    if nxbRun { fail(t("artwork.icon.builderUnsupported")); return }
+                    if RepoLayout.supportsIcon(repo.path) { args += ["--icon", icon] } else { say(t("artwork.icon.engineTooOld")) }
+                }
+            } catch { fail(t("artwork.icon.missing")); return }
+        }
         oneGameIPAPath = ""
         if exportsOneGame {
             // One game's own IPA with its game data inside (BuildStore+OneGame.swift, #540)

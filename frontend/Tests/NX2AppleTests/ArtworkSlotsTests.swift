@@ -26,7 +26,7 @@ final class ArtworkSlotsTests: XCTestCase {
     }
 
     func testEverySourceRoundTrips() throws {
-        let sources: [ArtworkChoice.Source] = [.banner, .screenshot(3), .imported("abc.jpg")]
+        let sources: [ArtworkChoice.Source] = [.banner, .screenshot(3), .imported("abc.jpg"), .gameIcon, .eshopIcon]
         for source in sources {
             let choice = ArtworkChoice(source: source, focus: ArtworkFocus(x: 0.25, y: 1))
             XCTAssertEqual(try JSONDecoder().decode(ArtworkChoice.self, from: JSONEncoder().encode(choice)), choice)
@@ -45,7 +45,7 @@ final class ArtworkSlotsTests: XCTestCase {
         XCTAssertThrowsError(try JSONDecoder().decode(ArtworkChoice.self, from: Data(#"{"source":{"kind":"hologram"}}"#.utf8)))
         // A library an earlier build wrote, with an app icon slot: it still loads, and the slot is ignored
         let withIcon = try JSONDecoder().decode(GameArtwork.self, from: Data(#"{"hero":{"source":{"kind":"banner"}},"icon":{"source":{"kind":"eshopIcon"}}}"#.utf8))
-        XCTAssertEqual(withIcon, GameArtwork(hero: ArtworkChoice(source: .banner)))
+        XCTAssertEqual(withIcon, GameArtwork(hero: ArtworkChoice(source: .banner), icon: ArtworkChoice(source: .eshopIcon)))
         let iconHero = try JSONDecoder().decode(GameArtwork.self, from: Data(#"{"hero":{"source":{"kind":"gameIcon"}},"thumbnail":{"source":{"kind":"banner"}}}"#.utf8))
         XCTAssertEqual(iconHero, GameArtwork(thumbnail: ArtworkChoice(source: .banner)), "a source this version does not know is the default")
     }

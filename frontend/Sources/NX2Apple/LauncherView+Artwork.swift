@@ -54,8 +54,12 @@ extension LauncherView {
     /// A Save the library could not write keeps the panel open with its error.
     func closeArtwork(save: Bool) {
         guard let editor = artworkEditor else { return }
+        let iconChanged = editor.draft.icon != editor.original.icon
         if save { guard editor.save(to: library) || !editor.isDirty else { return } } else { editor.cancel() }
-        withAnimation(.easeOut(duration: 0.18)) { artworkEditor = nil }
+        withAnimation(.easeOut(duration: 0.18)) {
+            artworkEditor = nil
+            if save, iconChanged, let game = library.games.first(where: { $0.id == editor.gameID }), game.isReady || game.hasIPA { iconRebuildGame = game.id }
+        }
         artworkSlot = nil
         artworkPreview = nil
         refreshArtwork()
@@ -79,6 +83,37 @@ extension LauncherView {
                 if withHero { heroArtwork = hero.map { (id, $0) } }
             }
         }
+    }
+
+    func iconRebuildNotice(_ game: LibraryGame) -> some View {
+        HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(loc.t("artwork.saved")).font(.manrope(13, .bold))
+                Text(loc.t("artwork.icon.rebuild")).font(.manrope(12)).foregroundStyle(.secondary)
+            }
+            Button(loc.t("artwork.icon.later")) { withAnimation { iconRebuildGame = nil } }
+                .buttonStyle(LauncherSecondaryButtonStyle())
+                .padTarget("icon.later", scope: "main") { withAnimation { iconRebuildGame = nil } }
+            Button(loc.t("artwork.icon.rebuildNow")) { rebuildIcon(game) }
+                .buttonStyle(LauncherPrimaryButtonStyle()).disabled(m.running)
+                .padTarget("icon.rebuild", scope: "main") { if !m.running { rebuildIcon(game) } }
+        }
+        .padding(.leading, 18).padding(.trailing, 14).padding(.vertical, 14)
+        .background(LauncherPalette.surface, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.08)))
+        .shadow(color: .black.opacity(0.4), radius: 18, y: 6)
+        .accessibilityElement(children: .contain)
+    }
+
+    /// A built Mac app is packed again at once. A one-game IPA opens the build page instead: its export
+    /// switches are the player's saved settings, which a rebuild offer should not change behind their back.
+    private func rebuildIcon(_ game: LibraryGame) {
+        guard !m.running else { return }
+        withAnimation { iconRebuildGame = nil }
+        configureBuild(game)
+        guard game.isReady else { return }
+        m.target = BuildTarget.mac
+        m.startBuild()
     }
 
     var artworkPadFocus: String? { artworkEditor.flatMap { $0.tiles.first(where: \.isSelected) }.map { "artwork.tile." + $0.id } }

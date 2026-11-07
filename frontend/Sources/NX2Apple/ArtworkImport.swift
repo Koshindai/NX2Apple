@@ -8,10 +8,11 @@ import UniformTypeIdentifiers
 /// Pure and safe to call from any thread.
 enum ArtworkImport {
     enum Kind {
-        case hero, thumbnail
+        case hero, thumbnail, icon
 
         var maxWidth: Int {
             switch self {
+            case .icon: return 2048
             case .hero: return 3840
             case .thumbnail: return 1920
             }
@@ -19,6 +20,7 @@ enum ArtworkImport {
         /// Narrower than this is drawn soft: worth a warning, never a refusal.
         var lowResolutionWidth: Int {
             switch self {
+            case .icon: return 1024
             case .hero: return 1920
             case .thumbnail: return 640
             }

@@ -15,6 +15,7 @@ import NXLauncher
     init(stores: LauncherStores? = nil, library: GameLibrary? = nil) {
         self.stores = stores ?? LauncherStores()
         self.library = library ?? GameLibrary()
+        self.stores.build.appIcon = { [library = self.library] titleID, base in try library.appIcon(for: titleID, basePath: base) }
     }
 }
 

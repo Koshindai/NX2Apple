@@ -37,6 +37,8 @@ extension GameLibrary {
         case .banner: url = ArtworkStore.cachedBanner(game.titleID, in: banners)
         case .imported(let name) where name == URL(fileURLWithPath: name).lastPathComponent && name != "..":   // a name in the game's folder, never a path
             url = ArtworkStore.customDirectory(for: game.id, in: banners).appendingPathComponent(name)
+        case .eshopIcon?: url = ArtworkStore.cachedCandidate(.eshopIcon, titleID: game.titleID, in: banners)
+        case .gameIcon?: url = gameIcon(of: game)
         case .screenshot?: url = choice.flatMap { ArtworkStore.cachedCandidate($0.source, titleID: game.titleID, in: banners) }
         case .imported, nil: url = nil
         }
