@@ -331,45 +331,41 @@ struct ArtworkPanel: View {
         return Label(text, systemImage: symbol).font(.manrope(13)).foregroundStyle(color).fixedSize(horizontal: false, vertical: true)
     }
 
-    /// Reset, Cancel and Save on one row: with the full reset text when it fits (English, Chinese), else with the short one
-    /// (French, German), and only when even that does not fit, Reset on a row of its own above.
+    /// Reset, Cancel and Save on one row, Reset as one word (its full name is the tooltip and what VoiceOver reads), or Reset on a
+    /// row of its own above when a language's words do not fit.
     private var footer: some View {
         ViewThatFits(in: .horizontal) {
-            footerRow(short: false)
-            footerRow(short: true)
+            HStack(spacing: 8) {
+                if editor.canReset(editor.slot) { resetButton }
+                Spacer(minLength: 0)
+                cancelAndSave
+            }
             VStack(alignment: .leading, spacing: 10) {
-                if editor.canReset(editor.slot) { resetButton(short: false) }
+                if editor.canReset(editor.slot) { resetButton }
                 HStack(spacing: 10) { Spacer(minLength: 0); cancelAndSave }
             }
         }
         .padding(.horizontal, 24).padding(.vertical, 16)
     }
 
-    private func footerRow(short: Bool) -> some View {
-        HStack(spacing: 10) {
-            if editor.canReset(editor.slot) { resetButton(short: short) }
-            Spacer(minLength: 8)
-            cancelAndSave
-        }
-    }
-
-    private func resetButton(short: Bool) -> some View {
+    private var resetButton: some View {
         let full = t("artwork.reset." + slotName)
         return Button { editor.reset(editor.slot) } label: {
-            Label(short ? t("artwork.reset") : full, systemImage: "arrow.uturn.backward").lineLimit(1).fixedSize()
+            Label(t("artwork.reset"), systemImage: "arrow.uturn.backward").lineLimit(1).fixedSize()
         }
             .buttonStyle(LauncherSecondaryButtonStyle())
+            .help(full)
             .accessibilityLabel(full)
             .padTarget("artwork.reset", scope: "artwork", radius: 9) { editor.reset(editor.slot) }
     }
 
     @ViewBuilder private var cancelAndSave: some View {
-        Button(t("artwork.cancel"), action: cancel).buttonStyle(LauncherSecondaryButtonStyle())
+        Button { cancel() } label: { Text(t("artwork.cancel")).lineLimit(1).fixedSize() }.buttonStyle(LauncherSecondaryButtonStyle())
             .keyboardShortcut(.cancelAction)
             .padTarget("artwork.cancel", scope: "artwork", radius: 9, activate: cancel)
         Button(action: save) {
-            Text(t("artwork.save")).font(.manrope(13.5, .bold)).foregroundStyle(.black)
-                .padding(.horizontal, 22).padding(.vertical, 9)
+            Text(t("artwork.save")).font(.manrope(13.5, .bold)).foregroundStyle(.black).lineLimit(1).fixedSize()
+                .padding(.horizontal, 18).padding(.vertical, 9)
                 .background(LauncherPalette.cream, in: Capsule())
                 .opacity(editor.isDirty ? 1 : 0.4)
         }

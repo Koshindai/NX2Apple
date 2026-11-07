@@ -165,13 +165,13 @@ struct LauncherView: View {
                         libraryPage
                             .allowsHitTesting(artworkEditor == nil)   // the library stays visible as the live preview, and takes no click or Return
                             .transaction { if reduceMotion { $0.animation = nil } }   // under Reduce Motion the panel fades in, nothing moves
-                            .overlay(alignment: .bottom) {
-                                if let id = iconRebuildGame, let game = library.games.first(where: { $0.id == id }) {
-                                    iconRebuildNotice(game).padding(.bottom, 24)
-                                        .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
-                                }
-                            }
                         activityBar
+                    }
+                    .overlay(alignment: .bottom) {   // over the activity bar, at the window's bottom edge
+                        if let id = iconRebuildGame, let game = library.games.first(where: { $0.id == id }) {
+                            iconRebuildNotice(game).padding(.bottom, 14)
+                                .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+                        }
                     }
                     if let editor = artworkEditor {
                         Divider().opacity(0.3)
